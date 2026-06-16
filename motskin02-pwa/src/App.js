@@ -5,7 +5,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
 
 const firebaseConfig = {
-apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: "motskin02.firebaseapp.com",
   projectId: "motskin02",
   storageBucket: "motskin02.firebasestorage.app",
@@ -37,10 +37,11 @@ const C = {
   text: "#1a1a1a",
 };
 
-function addMinutes(timeStr, mins) {
+function addMinutes(timeStr, mins, round5 = false) {
   if (!timeStr) return "";
   const [h, m] = timeStr.split(":").map(Number);
-  const total = h * 60 + m + mins;
+  let total = h * 60 + m + mins;
+  if (round5) total = Math.round(total / 5) * 5;
   const hh = Math.floor(((total % 1440) + 1440) % 1440 / 60).toString().padStart(2, "0");
   const mm = (((total % 60) + 60) % 60).toString().padStart(2, "0");
   return `${hh}:${mm}`;
@@ -415,14 +416,14 @@ function ShabbatTab({ isAdmin, t }) {
   function blankForm() {
     const c = nextShabbat ? formatTime(nextShabbat.candle) : "19:00";
     const h = nextShabbat ? formatTime(nextShabbat.havdalah) : "20:10";
-    return { type: "shabbat", nom: "", photoData: "", entree: c, sortie: h, chakharit: "08:30", paracha: "", kiddouch: "", chiour: "12:00", seoudaText: "", birkat: false, prochaineDate: false, prochaineText: "" };
+    return { type: "shabbat", nom: "", photoData: "", entree: c, sortie: h, chakharit: "08:30", paracha: "", kiddouch: "", chiour: "12:00", showChiourBefore: false, chiourBeforeText: "", seoudaText: "", birkat: false, prochaineDate: false, prochaineText: "" };
   }
 
   function openAdd() { setForm(blankForm()); setEditing(null); setShowForm(true); }
   function openEdit(ev) { setForm({ ...ev }); setEditing(ev.id); setShowForm(true); }
 
   async function save() {
-    const entry = { ...form, id: editing || Date.now().toString(), minhaBefore: addMinutes(form.entree, -5), minhaAfternoon: addMinutes(form.sortie, -90), arvit: addMinutes(form.sortie, -10) };
+    const entry = { ...form, id: editing || Date.now().toString(), minhaBefore: addMinutes(form.entree, -5, true), minhaAfternoon: addMinutes(form.sortie, -90), arvit: addMinutes(form.sortie, -10) };
     const updated = editing ? events.map(e => e.id === editing ? entry : e) : [entry, ...events];
     setEvents(updated);
     await saveData(KEYS.shabbatEvents, updated);
@@ -462,6 +463,7 @@ function ShabbatTab({ isAdmin, t }) {
             </div>
             <Row label={`🕯️ ${t.allumage}`} value={ev.entree} />
             <Row label={`🙏 ${t.minhaBefore}`} value={ev.minhaBefore} />
+            {ev.showChiourBefore && ev.chiourBeforeText && <Row label={`📚 Chiour`} value={ev.chiourBeforeText} />}
             <Row label={`☀️ ${t.chakharit}`} value={ev.chakharit} />
             <Row label={`📖 ${t.paracha}`} value={ev.paracha} />
             <Row label={`🍷 ${t.kiddouch}`} value={ev.kiddouch} />
@@ -495,6 +497,16 @@ function ShabbatTab({ isAdmin, t }) {
           <input value={form.paracha} onChange={e => setForm(f => ({ ...f, paracha: e.target.value }))} style={inp} />
           <label style={lbl}>{t.kiddouch}</label>
           <input value={form.kiddouch} onChange={e => setForm(f => ({ ...f, kiddouch: e.target.value }))} style={inp} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0" }}>
+            <input type="checkbox" checked={form.showChiourBefore} onChange={e => setForm(f => ({ ...f, showChiourBefore: e.target.checked }))} id="chiourBefore" />
+            <label htmlFor="chiourBefore" style={{ fontSize: 14 }}>📚 Chiour (après Minha)</label>
+          </div>
+          {form.showChiourBefore && (
+            <>
+              <label style={lbl}>Texte du Chiour</label>
+              <input value={form.chiourBeforeText || ""} onChange={e => setForm(f => ({ ...f, chiourBeforeText: e.target.value }))} style={inp} placeholder="Ex: Rav Yaacov - Pirké Avot" />
+            </>
+          )}
           <label style={lbl}>{t.chiour}</label>
           <input type="time" value={form.chiour} onChange={e => setForm(f => ({ ...f, chiour: e.target.value }))} style={inp} />
           {form.type === "shabbat" && (
@@ -574,8 +586,8 @@ function ActivitesTab({ isAdmin, t }) {
           <label style={lbl}>{t.titre}</label>
           <input value={form.titre || ""} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))} style={inp} />
           <PhotoInput photoData={form.photoData} onChange={d => setForm(f => ({ ...f, photoData: d }))} t={t} />
-          <label style={lbl}>{t.date}</label>
-          <input type="date" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inp} />
+          <label style={lbl}>{t.date} <span style={{fontWeight:400, color:"#6b7280", fontSize:12}}>(date ou texte libre ex: "Chaque lundi")</span></label>
+          <input type="text" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inp} placeholder="Ex: 25/06/2025 ou Chaque lundi" />
           <label style={lbl}>{t.heure}</label>
           <input type="time" value={form.heure || ""} onChange={e => setForm(f => ({ ...f, heure: e.target.value }))} style={inp} />
           <label style={lbl}>{t.public}</label>
@@ -734,7 +746,14 @@ function AnnoncesTab({ isAdmin, t }) {
                 <button onClick={() => del(a.id)} style={{ background: "#fee2e2", color: C.danger, borderRadius: 6, padding: "4px 8px", fontSize: 12 }}>{t.delete}</button>
               )}
             </div>
-            <p style={{ fontSize: 14, color: C.text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{a.texte}</p>
+            <p style={{ fontSize: 14, color: C.text, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: 10 }}>{a.texte}</p>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`📢 *${a.prenom} ${a.nom}* (${a.date}):\n\n${a.texte}`)}`}
+              target="_blank" rel="noopener"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#25D366", color: "#fff", padding: "7px 14px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 600 }}
+            >
+              <span>💬</span> Partager sur WhatsApp
+            </a>
           </div>
         </Card>
       ))}
