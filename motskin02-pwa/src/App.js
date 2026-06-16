@@ -258,7 +258,7 @@ function Header({ lang, setLang, isAdmin, onAdminClick, t }) {
 
 function TabBar({ tab, setTab, t }) {
   const tabs = [
-    { key: "shabbat", icon: "✡️", label: t.shabbatFetes },
+    { key: "shabbat", icon: "🇮🇱", label: t.shabbatFetes },
     { key: "activites", icon: "📅", label: t.activites },
     { key: "annonces", icon: "📢", label: t.annonces },
     { key: "location", icon: "🏛️", label: t.location },
@@ -564,7 +564,7 @@ function ActivitesTab({ isAdmin, t }) {
 
   return (
     <div style={{ padding: "14px 12px 80px" }}>
-      {isAdmin && <AddBtn onClick={() => { setForm({ titre: "", date: "", heure: "", public: "", tarif: "", photoData: "" }); setEditing(null); setShowForm(true); }} label={t.addEvent} />}
+      {isAdmin && <AddBtn onClick={() => { setForm({ titre: "", date: "", heure: "", heureFin: "", showHeureFin: false, public: "", tarif: "", photoData: "" }); setEditing(null); setShowForm(true); }} label={t.addEvent} />}
       {events.map((ev, idx) => (
         <Card key={ev.id}>
           {ev.photoData && <img src={ev.photoData} alt={ev.titre} style={{ width: "100%", height: 160, objectFit: "cover" }} />}
@@ -572,7 +572,7 @@ function ActivitesTab({ isAdmin, t }) {
             <div style={{ fontWeight: 800, fontSize: 18, color: C.navy, marginBottom: 8 }}>{ev.titre}</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
               {ev.date && <Chip>📅 {ev.date}</Chip>}
-              {ev.heure && <Chip>🕐 {ev.heure}</Chip>}
+              {ev.heure && <Chip>🕐 {ev.heure}{ev.showHeureFin && ev.heureFin ? ` → ${ev.heureFin}` : ""}</Chip>}
               {ev.public && <Chip>👥 {ev.public}</Chip>}
               {ev.tarif && <Chip>💰 {ev.tarif}</Chip>}
             </div>
@@ -590,6 +590,16 @@ function ActivitesTab({ isAdmin, t }) {
           <input type="text" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inp} placeholder="Ex: 25/06/2025 ou Chaque lundi" />
           <label style={lbl}>{t.heure}</label>
           <input type="time" value={form.heure || ""} onChange={e => setForm(f => ({ ...f, heure: e.target.value }))} style={inp} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
+            <input type="checkbox" checked={form.showHeureFin || false} onChange={e => setForm(f => ({ ...f, showHeureFin: e.target.checked }))} id="heureFin" />
+            <label htmlFor="heureFin" style={{ fontSize: 14 }}>🕐 Ajouter une heure de fin</label>
+          </div>
+          {form.showHeureFin && (
+            <>
+              <label style={lbl}>Heure de fin</label>
+              <input type="time" value={form.heureFin || ""} onChange={e => setForm(f => ({ ...f, heureFin: e.target.value }))} style={inp} />
+            </>
+          )}
           <label style={lbl}>{t.public}</label>
           <input value={form.public || ""} onChange={e => setForm(f => ({ ...f, public: e.target.value }))} style={inp} />
           <label style={lbl}>{t.tarif}</label>
