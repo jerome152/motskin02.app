@@ -182,28 +182,25 @@ const T = {
 const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces" };
 
 async function loadData(collectionName) {
+  // Try without ordering first (most reliable)
   try {
-    const q = query(collection(db, collectionName), orderBy("_order", "asc"));
-    const snap = await getDocs(q);
-    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Cache to localStorage
+    const snap = await getDocs(collection(db, collectionName));
+    let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Sort by _order if available, otherwise by id
+    data.sort((a, b) => {
+      if (a._order !== undefined && b._order !== undefined) return a._order - b._order;
+      return 0;
+    });
     try { localStorage.setItem(collectionName, JSON.stringify(data)); } catch {}
     return data;
-  } catch {
-    // fallback: get without ordering
+  } catch(e) {
+    console.error("Firebase load error:", e);
+    // Fallback: localStorage
     try {
-      const snap = await getDocs(collection(db, collectionName));
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      try { localStorage.setItem(collectionName, JSON.stringify(data)); } catch {}
-      return data;
-    } catch {
-      // Final fallback: localStorage
-      try {
-        const local = localStorage.getItem(collectionName);
-        if (local) return JSON.parse(local);
-      } catch {}
-      return [];
-    }
+      const local = localStorage.getItem(collectionName);
+      if (local) return JSON.parse(local);
+    } catch {}
+    return [];
   }
 }
 
