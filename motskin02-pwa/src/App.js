@@ -1,5 +1,22 @@
 
 import React, { useState, useEffect } from "react";
+// ─── Firebase ────────────────────────────────────────────────────────────────
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCjKR3D1ol0wP9Fh1SoWoh8enbcfBod7QY",
+  authDomain: "motskin02.firebaseapp.com",
+  projectId: "motskin02",
+  storageBucket: "motskin02.firebasestorage.app",
+  messagingSenderId: "761597022549",
+  appId: "1:761597022549:web:4e20e61a1dd271682e5fdc"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+
 
 import logoSrc from "./logo.jpg";
 const LOGO_SRC = logoSrc;
@@ -163,17 +180,39 @@ const T = {
 
 const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces" };
 
-function loadData(key) {
+async function loadData(collectionName) {
   try {
-    const local = localStorage.getItem(key);
-    if (local) return Promise.resolve(JSON.parse(local));
-  } catch {}
-  return Promise.resolve([]);
+    const q = query(collection(db, collectionName), orderBy("_order", "asc"));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    // fallback: get without ordering
+    try {
+      const snap = await getDocs(collection(db, collectionName));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch { return []; }
+  }
 }
 
-function saveData(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
-  return Promise.resolve();
+async function saveItem(collectionName, item, order) {
+  try {
+    await setDoc(doc(db, collectionName, item.id), { ...item, _order: order });
+  } catch(e) { console.error(e); }
+}
+
+async function deleteItem(collectionName, id) {
+  try {
+    await deleteDoc(doc(db, collectionName, id));
+  } catch(e) { console.error(e); }
+}
+
+async function saveData(collectionName, dataArray) {
+  // Save all items with their order index
+  try {
+    await Promise.all(dataArray.map((item, idx) => 
+      setDoc(doc(db, collectionName, item.id), { ...item, _order: idx })
+    ));
+  } catch(e) { console.error(e); }
 }
 
 const globalCSS = `
