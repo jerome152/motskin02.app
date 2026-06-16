@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 // ─── Firebase ────────────────────────────────────────────────────────────────
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
+import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, orderBy, query } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -182,28 +182,23 @@ const T = {
 const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces" };
 
 async function loadData(collectionName) {
-  // Get local data first (has photos)
+  // Get local data first as fallback
   let localData = [];
   try {
     const local = localStorage.getItem(collectionName);
     if (local) localData = JSON.parse(local);
   } catch {}
 
-  // Try Firebase
+  // Load from Firebase
   try {
     const snap = await getDocs(collection(db, collectionName));
-    let firebaseData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    firebaseData.sort((a, b) => {
+    let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    data.sort((a, b) => {
       if (a._order !== undefined && b._order !== undefined) return a._order - b._order;
       return 0;
     });
-    // Merge: restore photos from localStorage
-    const photoMap = {};
-    localData.forEach(item => { if (item.photoData) photoMap[item.id] = item.photoData; });
-    const merged = firebaseData.map(item => ({ ...item, photoData: photoMap[item.id] || "" }));
-    // Update localStorage with merged data
-    try { localStorage.setItem(collectionName, JSON.stringify(merged)); } catch {}
-    return merged;
+    try { localStorage.setItem(collectionName, JSON.stringify(data)); } catch {}
+    return data;
   } catch(e) {
     console.error("Firebase load error:", e);
     return localData;
@@ -222,14 +217,36 @@ async function deleteItem(collectionName, id) {
   } catch(e) { console.error(e); }
 }
 
+// Compress image to max ~400KB before saving
+async function compressImage(base64Data, maxWidth = 800, quality = 0.7) {
+  if (!base64Data || !base64Data.startsWith("data:image")) return base64Data;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(base64Data);
+    img.src = base64Data;
+  });
+}
+
 async function saveData(collectionName, dataArray) {
-  // Always save full data (with photos) to localStorage
+  // Save to localStorage immediately
   try { localStorage.setItem(collectionName, JSON.stringify(dataArray)); } catch {}
-  // Save to Firebase WITHOUT photoData (too large)
+  // Compress photos and save to Firestore
   try {
-    await Promise.all(dataArray.map((item, idx) => {
-      const { photoData, ...itemWithoutPhoto } = item;
-      return setDoc(doc(db, collectionName, item.id), { ...itemWithoutPhoto, _order: idx });
+    await Promise.all(dataArray.map(async (item, idx) => {
+      let photoData = item.photoData || "";
+      if (photoData && photoData.startsWith("data:image")) {
+        photoData = await compressImage(photoData);
+      }
+      return setDoc(doc(db, collectionName, item.id), { ...item, photoData, _order: idx });
     }));
   } catch(e) { console.error("Firebase save error:", e); }
 }
