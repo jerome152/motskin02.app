@@ -182,25 +182,31 @@ const T = {
 const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces" };
 
 async function loadData(collectionName) {
-  // Try without ordering first (most reliable)
+  // Get local data first (has photos)
+  let localData = [];
+  try {
+    const local = localStorage.getItem(collectionName);
+    if (local) localData = JSON.parse(local);
+  } catch {}
+
+  // Try Firebase
   try {
     const snap = await getDocs(collection(db, collectionName));
-    let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Sort by _order if available, otherwise by id
-    data.sort((a, b) => {
+    let firebaseData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    firebaseData.sort((a, b) => {
       if (a._order !== undefined && b._order !== undefined) return a._order - b._order;
       return 0;
     });
-    try { localStorage.setItem(collectionName, JSON.stringify(data)); } catch {}
-    return data;
+    // Merge: restore photos from localStorage
+    const photoMap = {};
+    localData.forEach(item => { if (item.photoData) photoMap[item.id] = item.photoData; });
+    const merged = firebaseData.map(item => ({ ...item, photoData: photoMap[item.id] || "" }));
+    // Update localStorage with merged data
+    try { localStorage.setItem(collectionName, JSON.stringify(merged)); } catch {}
+    return merged;
   } catch(e) {
     console.error("Firebase load error:", e);
-    // Fallback: localStorage
-    try {
-      const local = localStorage.getItem(collectionName);
-      if (local) return JSON.parse(local);
-    } catch {}
-    return [];
+    return localData;
   }
 }
 
@@ -217,13 +223,14 @@ async function deleteItem(collectionName, id) {
 }
 
 async function saveData(collectionName, dataArray) {
-  // Save to localStorage as immediate fallback
+  // Always save full data (with photos) to localStorage
   try { localStorage.setItem(collectionName, JSON.stringify(dataArray)); } catch {}
-  // Save all items to Firebase with their order index
+  // Save to Firebase WITHOUT photoData (too large)
   try {
-    await Promise.all(dataArray.map((item, idx) => 
-      setDoc(doc(db, collectionName, item.id), { ...item, _order: idx })
-    ));
+    await Promise.all(dataArray.map((item, idx) => {
+      const { photoData, ...itemWithoutPhoto } = item;
+      return setDoc(doc(db, collectionName, item.id), { ...itemWithoutPhoto, _order: idx });
+    }));
   } catch(e) { console.error("Firebase save error:", e); }
 }
 
