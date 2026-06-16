@@ -1,0 +1,26 @@
+{
+  "short_name": "Motskin02",
+  "name": "Beth Haknesset Motskin02",
+  "description": "Application officielle du Beth Haknesset Motskin02 - Ra'anana",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1a2e52",
+  "background_color": "#f0f4f8",
+  "lang": "fr",
+  "categories": ["lifestyle", "social"]
+}
