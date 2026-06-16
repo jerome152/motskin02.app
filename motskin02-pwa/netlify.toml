@@ -1,9 +1,11 @@
 [build]
   command = "npm install && npm run build"
   publish = "build"
+  base = "motskin02-pwa"
 
 [build.environment]
   NODE_VERSION = "18"
+  SECRETS_SCAN_OMIT_PATHS = "node_modules"
 
 [[redirects]]
   from = "/*"
