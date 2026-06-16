@@ -408,7 +408,7 @@ function PhotoInput({ photoData, onChange, t }) {
 }
 
 // ─── SHABBAT TAB ─────────────────────────────────────────────────────────────
-function ShabbatTab({ isAdmin, t }) {
+function ShabbatTab({ isAdmin, t, activeTab }) {
   const [events, setEvents] = useState([]);
   const [nextShabbat, setNextShabbat] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -417,9 +417,10 @@ function ShabbatTab({ isAdmin, t }) {
   const [form, setForm] = useState({});
 
   useEffect(() => {
+    setLoading(true);
     loadData(KEYS.shabbatEvents).then(d => { setEvents(d); setLoading(false); });
     fetchNext();
-  }, []);
+  }, [activeTab]);
 
   async function fetchNext() {
     try {
@@ -555,13 +556,13 @@ function ShabbatTab({ isAdmin, t }) {
 }
 
 // ─── ACTIVITES TAB ───────────────────────────────────────────────────────────
-function ActivitesTab({ isAdmin, t }) {
+function ActivitesTab({ isAdmin, t, activeTab }) {
   const [events, setEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
 
-  useEffect(() => { loadData(KEYS.activities).then(setEvents); }, []);
+  useEffect(() => { loadData(KEYS.activities).then(setEvents); }, [activeTab]);
 
   async function save() {
     const entry = { ...form, id: editing || Date.now().toString() };
@@ -633,13 +634,13 @@ function ActivitesTab({ isAdmin, t }) {
 }
 
 // ─── LOCATION TAB ────────────────────────────────────────────────────────────
-function LocationTab({ isAdmin, t }) {
+function LocationTab({ isAdmin, t, activeTab }) {
   const [items, setItems] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
 
-  useEffect(() => { loadData(KEYS.locations).then(setItems); }, []);
+  useEffect(() => { loadData(KEYS.locations).then(setItems); }, [activeTab]);
 
   async function save() {
     const entry = { ...form, id: editing || Date.now().toString() };
@@ -708,14 +709,14 @@ function ReglementsTab({ t }) {
 
 
 // ─── ANNONCES TAB ────────────────────────────────────────────────────────────
-function AnnoncesTab({ isAdmin, t }) {
+function AnnoncesTab({ isAdmin, t, activeTab }) {
   const [annonces, setAnnonces] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ prenom: "", nom: "", texte: "", photoData: "" });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => { loadData(KEYS.annonces).then(setAnnonces); }, []);
+  useEffect(() => { loadData(KEYS.annonces).then(setAnnonces); }, [activeTab]);
 
   function validate() {
     const e = {};
