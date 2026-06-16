@@ -453,6 +453,7 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
     if (!confirm("Supprimer ?")) return;
     const updated = events.filter(e => e.id !== id);
     setEvents(updated);
+    await deleteItem(KEYS.shabbatEvents, id);
     await saveData(KEYS.shabbatEvents, updated);
   }
 
@@ -572,7 +573,9 @@ function ActivitesTab({ isAdmin, t, activeTab }) {
 
   async function del(id) {
     if (!confirm("Supprimer ?")) return;
-    const u = events.filter(e => e.id !== id); setEvents(u); await saveData(KEYS.activities, u);
+    const u = events.filter(e => e.id !== id); setEvents(u);
+    await deleteItem(KEYS.activities, id);
+    await saveData(KEYS.activities, u);
   }
 
   async function move(idx, dir) {
@@ -650,7 +653,9 @@ function LocationTab({ isAdmin, t, activeTab }) {
 
   async function del(id) {
     if (!confirm("Supprimer ?")) return;
-    const u = items.filter(e => e.id !== id); setItems(u); await saveData(KEYS.locations, u);
+    const u = items.filter(e => e.id !== id); setItems(u);
+    await deleteItem(KEYS.locations, id);
+    await saveData(KEYS.locations, u);
   }
 
   async function move(idx, dir) {
@@ -743,7 +748,9 @@ function AnnoncesTab({ isAdmin, t, activeTab }) {
   async function del(id) {
     if (!confirm("Supprimer ?")) return;
     const u = annonces.filter(e => e.id !== id);
-    setAnnonces(u); await saveData(KEYS.annonces, u);
+    setAnnonces(u);
+    await deleteItem(KEYS.annonces, id);
+    await saveData(KEYS.annonces, u);
   }
 
   function getInitials(prenom, nom) {
