@@ -185,13 +185,25 @@ async function loadData(collectionName) {
   try {
     const q = query(collection(db, collectionName), orderBy("_order", "asc"));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Cache to localStorage
+    try { localStorage.setItem(collectionName, JSON.stringify(data)); } catch {}
+    return data;
   } catch {
     // fallback: get without ordering
     try {
       const snap = await getDocs(collection(db, collectionName));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch { return []; }
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      try { localStorage.setItem(collectionName, JSON.stringify(data)); } catch {}
+      return data;
+    } catch {
+      // Final fallback: localStorage
+      try {
+        const local = localStorage.getItem(collectionName);
+        if (local) return JSON.parse(local);
+      } catch {}
+      return [];
+    }
   }
 }
 
@@ -208,12 +220,14 @@ async function deleteItem(collectionName, id) {
 }
 
 async function saveData(collectionName, dataArray) {
-  // Save all items with their order index
+  // Save to localStorage as immediate fallback
+  try { localStorage.setItem(collectionName, JSON.stringify(dataArray)); } catch {}
+  // Save all items to Firebase with their order index
   try {
     await Promise.all(dataArray.map((item, idx) => 
       setDoc(doc(db, collectionName, item.id), { ...item, _order: idx })
     ));
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error("Firebase save error:", e); }
 }
 
 const globalCSS = `
@@ -423,7 +437,7 @@ function ShabbatTab({ isAdmin, t }) {
   function openEdit(ev) { setForm({ ...ev }); setEditing(ev.id); setShowForm(true); }
 
   async function save() {
-    const entry = { ...form, id: editing || Date.now().toString(), minhaBefore: addMinutes(form.entree, -5, true), minhaAfternoon: addMinutes(form.sortie, -90), arvit: addMinutes(form.sortie, -10) };
+    const entry = { ...form, id: editing || Date.now().toString(), minhaBefore: addMinutes(form.entree, -5, true), minhaAfternoon: addMinutes(form.sortie, -90, true), arvit: addMinutes(form.sortie, -10, true) };
     const updated = editing ? events.map(e => e.id === editing ? entry : e) : [entry, ...events];
     setEvents(updated);
     await saveData(KEYS.shabbatEvents, updated);
@@ -564,7 +578,7 @@ function ActivitesTab({ isAdmin, t }) {
 
   return (
     <div style={{ padding: "14px 12px 80px" }}>
-      {isAdmin && <AddBtn onClick={() => { setForm({ titre: "", date: "", heure: "", heureFin: "", showHeureFin: false, public: "", tarif: "", photoData: "" }); setEditing(null); setShowForm(true); }} label={t.addEvent} />}
+      {isAdmin && <AddBtn onClick={() => { setForm({ titre: "", date: "", heure: "", heureFin: "", showHeureFin: false, public: "", tarif: "", description: "", photoData: "" }); setEditing(null); setShowForm(true); }} label={t.addEvent} />}
       {events.map((ev, idx) => (
         <Card key={ev.id}>
           {ev.photoData && <img src={ev.photoData} alt={ev.titre} style={{ width: "100%", height: 160, objectFit: "cover" }} />}
@@ -576,7 +590,8 @@ function ActivitesTab({ isAdmin, t }) {
               {ev.public && <Chip>👥 {ev.public}</Chip>}
               {ev.tarif && <Chip>💰 {ev.tarif}</Chip>}
             </div>
-            {isAdmin && <AdminBtns onUp={() => move(idx, -1)} onDown={() => move(idx, 1)} onEdit={() => { setForm({ ...ev }); setEditing(ev.id); setShowForm(true); }} onDelete={() => del(ev.id)} t={t} />}
+            {ev.description && <p style={{ fontSize: 13, color: C.gray, lineHeight: 1.5, marginTop: 8 }}>{ev.description}</p>}
+            {isAdmin && <AdminBtns onUp={() => move(idx, -1)} onDown={() => move(idx, 1)} onEdit={() => { setForm({ ...ev, description: ev.description || "" }); setEditing(ev.id); setShowForm(true); }} onDelete={() => del(ev.id)} t={t} />}
           </div>
         </Card>
       ))}
@@ -604,6 +619,8 @@ function ActivitesTab({ isAdmin, t }) {
           <input value={form.public || ""} onChange={e => setForm(f => ({ ...f, public: e.target.value }))} style={inp} />
           <label style={lbl}>{t.tarif}</label>
           <input value={form.tarif || ""} onChange={e => setForm(f => ({ ...f, tarif: e.target.value }))} style={inp} />
+          <label style={lbl}>Description <span style={{fontWeight:400, color:"#6b7280", fontSize:12}}>(optionnel)</span></label>
+          <textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...inp, height: 80, resize: "vertical" }} placeholder="Détails de l'événement..." />
           <ModalButtons onCancel={() => setShowForm(false)} onSave={save} t={t} />
         </Modal>
       )}
@@ -649,7 +666,7 @@ function LocationTab({ isAdmin, t }) {
             <a href="https://wa.me/972555002021" target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#25D366", color: C.white, padding: "9px 16px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 600 }}>
               💬 {t.contact}
             </a>
-            {isAdmin && <AdminBtns onUp={() => move(idx, -1)} onDown={() => move(idx, 1)} onEdit={() => { setForm({ ...ev }); setEditing(ev.id); setShowForm(true); }} onDelete={() => del(ev.id)} t={t} />}
+            {isAdmin && <AdminBtns onUp={() => move(idx, -1)} onDown={() => move(idx, 1)} onEdit={() => { setForm({ ...ev, description: ev.description || "" }); setEditing(ev.id); setShowForm(true); }} onDelete={() => del(ev.id)} t={t} />}
           </div>
         </Card>
       ))}
