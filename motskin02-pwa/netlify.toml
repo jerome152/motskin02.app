@@ -2,6 +2,7 @@
   command = "npm install && npm run build"
   publish = "build"
   base = "motskin02-pwa"
+  functions = "functions"
 
 [build.environment]
   NODE_VERSION = "18"
