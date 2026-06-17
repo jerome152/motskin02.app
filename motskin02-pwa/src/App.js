@@ -239,15 +239,11 @@ async function compressImage(base64Data, maxWidth = 800, quality = 0.7) {
 async function saveData(collectionName, dataArray) {
   // Save to localStorage immediately
   try { localStorage.setItem(collectionName, JSON.stringify(dataArray)); } catch {}
-  // Compress photos and save to Firestore
+  // Save to Firestore (photos are already compressed at upload time)
   try {
-    await Promise.all(dataArray.map(async (item, idx) => {
-      let photoData = item.photoData || "";
-      if (photoData && photoData.startsWith("data:image")) {
-        photoData = await compressImage(photoData);
-      }
-      return setDoc(doc(db, collectionName, item.id), { ...item, photoData, _order: idx });
-    }));
+    await Promise.all(dataArray.map((item, idx) => 
+      setDoc(doc(db, collectionName, item.id), { ...item, _order: idx })
+    ));
   } catch(e) { console.error("Firebase save error:", e); }
 }
 
@@ -408,18 +404,25 @@ function ModalButtons({ onCancel, onSave, t }) {
 }
 
 function PhotoInput({ photoData, onChange, t }) {
+  const [uploading, setUploading] = useState(false);
   function handle(e) {
     const file = e.target.files[0];
     if (!file) return;
+    setUploading(true);
     const reader = new FileReader();
-    reader.onload = ev => onChange(ev.target.result);
+    reader.onload = async (ev) => {
+      const compressed = await compressImage(ev.target.result);
+      onChange(compressed);
+      setUploading(false);
+    };
     reader.readAsDataURL(file);
   }
   return (
     <>
       <label style={lbl}>{t.uploadPhoto}</label>
       <input type="file" accept="image/*" onChange={handle} style={{ marginBottom: 8 }} />
-      {photoData && <img src={photoData} style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 8, marginBottom: 8 }} alt="" />}
+      {uploading && <div style={{ fontSize: 12, color: C.gray, marginBottom: 8 }}>Compression en cours...</div>}
+      {photoData && !uploading && <img src={photoData} style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 8, marginBottom: 8 }} alt="" />}
     </>
   );
 }
