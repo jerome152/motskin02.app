@@ -247,6 +247,16 @@ async function saveData(collectionName, dataArray) {
   } catch(e) { console.error("Firebase save error:", e); }
 }
 
+async function notifyUsers(title, message) {
+  try {
+    await fetch("/.netlify/functions/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, message }),
+    });
+  } catch(e) { console.error("Notification error:", e); }
+}
+
 const globalCSS = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -462,11 +472,16 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
   function openEdit(ev) { setForm({ ...ev }); setEditing(ev.id); setShowForm(true); }
 
   async function save() {
+    const isNew = !editing;
     const entry = { ...form, id: editing || Date.now().toString(), minhaBefore: addMinutes(form.entree, -5, true), minhaAfternoon: addMinutes(form.sortie, -90, true), arvit: addMinutes(form.sortie, -10, true) };
     const updated = editing ? events.map(e => e.id === editing ? entry : e) : [entry, ...events];
     setEvents(updated);
     await saveData(KEYS.shabbatEvents, updated);
     setShowForm(false);
+    if (isNew) {
+      const typeLabel = entry.type === "shabbat" ? "Chabbat" : "Fête";
+      notifyUsers(`🇮🇱 ${typeLabel} : ${entry.nom}`, "Nouveaux horaires disponibles sur l'application");
+    }
   }
 
   async function del(id) {
@@ -586,9 +601,13 @@ function ActivitesTab({ isAdmin, t, activeTab }) {
   useEffect(() => { loadData(KEYS.activities).then(setEvents); }, [activeTab]);
 
   async function save() {
+    const isNew = !editing;
     const entry = { ...form, id: editing || Date.now().toString() };
     const updated = editing ? events.map(e => e.id === editing ? entry : e) : [entry, ...events];
     setEvents(updated); await saveData(KEYS.activities, updated); setShowForm(false);
+    if (isNew) {
+      notifyUsers(`📅 Nouvelle activité : ${entry.titre}`, entry.date ? `Le ${entry.date}` : "Découvrez les détails sur l'application");
+    }
   }
 
   async function del(id) {
@@ -763,6 +782,7 @@ function AnnoncesTab({ isAdmin, t, activeTab }) {
     setShowForm(false);
     setSuccess(true);
     setTimeout(() => setSuccess(false), 3000);
+    notifyUsers(`📢 ${entry.prenom} ${entry.nom}`, entry.texte.slice(0, 100));
   }
 
   async function del(id) {
