@@ -116,6 +116,21 @@ const T = {
     nomReq: "Nom obligatoire",
     texteReq: "Message obligatoire",
     annonceAdded: "Annonce publiée !",
+    pensee: "Pensée du jour",
+    programme: "Programme",
+    penseeDuJour: "Pensée du jour",
+    ajouterPensee: "Ajouter une pensée",
+    gererPensees: "Gérer les pensées",
+    source: "Source / Référence",
+    contenuPensee: "Texte de la pensée",
+    semaineDu: "Semaine du",
+    ajouterCreneau: "Ajouter un créneau",
+    jourSemaine: "Jour",
+    intitule: "Intitulé",
+    horaire: "Horaire",
+    lieuOptionnel: "Lieu (optionnel)",
+    aucunProgramme: "Aucun programme cette semaine pour le moment.",
+    dimanche: "Dimanche", lundi: "Lundi", mardi: "Mardi", mercredi: "Mercredi", jeudi: "Jeudi", vendredi: "Vendredi", samedi: "Samedi",
   },
   he: {
     appName: "בית הכנסת מוצקין 02",
@@ -176,10 +191,39 @@ const T = {
     nomReq: "שם משפחה חובה",
     texteReq: "הודעה חובה",
     annonceAdded: "ההודעה פורסמה!",
+    pensee: "מחשבת היום",
+    programme: "תוכנית",
+    penseeDuJour: "מחשבת היום",
+    ajouterPensee: "הוסף מחשבה",
+    gererPensees: "ניהול מחשבות",
+    source: "מקור",
+    contenuPensee: "טקסט המחשבה",
+    semaineDu: "שבוע מתאריך",
+    ajouterCreneau: "הוסף שעה",
+    jourSemaine: "יום",
+    intitule: "כותרת",
+    horaire: "שעה",
+    lieuOptionnel: "מקום (אופציונלי)",
+    aucunProgramme: "אין תוכנית לשבוע זה כרגע.",
+    dimanche: "ראשון", lundi: "שני", mardi: "שלישי", mercredi: "רביעי", jeudi: "חמישי", vendredi: "שישי", samedi: "שבת",
   },
 };
 
-const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces" };
+const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces", pensees: "m02_pensees", programme: "m02_programme" };
+
+// Default rotating thoughts (used if admin hasn't added custom ones, or mixed in with them)
+const DEFAULT_PENSEES = [
+  { texte: "Celui qui sauve une vie sauve un monde entier.", source: "Talmud, Sanhédrin 37a" },
+  { texte: "Tout commencement est difficile.", source: "Mekhilta, Yitro" },
+  { texte: "Qui est riche ? Celui qui se réjouit de son sort.", source: "Pirké Avot 4:1" },
+  { texte: "N'aie pas peur, fils de Jacob, lève-toi et agis.", source: "Inspiré de Béréchit" },
+  { texte: "Là où il n'y a pas de farine, il n'y a pas de Torah ; là où il n'y a pas de Torah, il n'y a pas de farine.", source: "Pirké Avot 3:21" },
+  { texte: "Ne juge pas ton prochain avant de t'être mis à sa place.", source: "Pirké Avot 2:4" },
+  { texte: "Toute la Torah repose sur la paix.", source: "Michna, Guittin 59b" },
+  { texte: "Si je ne suis pas pour moi, qui le sera ? Si je ne suis que pour moi, que suis-je ? Et si pas maintenant, quand ?", source: "Hillel, Pirké Avot 1:14" },
+  { texte: "La modestie est la porte d'entrée de toute sagesse.", source: "Pensée juive traditionnelle" },
+  { texte: "Un sourire vaut plus que mille mots de réconfort.", source: "Tradition orale" },
+];
 
 async function loadData(collectionName) {
   // Get local data first as fallback
@@ -297,8 +341,10 @@ function Header({ lang, setLang, isAdmin, onAdminClick, t }) {
   );
 }
 
-function TabBar({ tab, setTab, t }) {
+function TabBar({ tab, setTab, t, lang }) {
   const tabs = [
+    { key: "pensee", icon: "💭", label: lang === "he" ? t.pensee : "Pensée" },
+    { key: "programme", icon: "📋", label: t.programme },
     { key: "shabbat", icon: "🇮🇱", label: t.shabbatFetes },
     { key: "activites", icon: "📅", label: t.activites },
     { key: "annonces", icon: "📢", label: t.annonces },
@@ -309,13 +355,13 @@ function TabBar({ tab, setTab, t }) {
     <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: C.white, borderTop: `2px solid ${C.skyBlue}`, display: "flex", zIndex: 100, boxShadow: "0 -2px 10px rgba(0,0,0,0.1)" }}>
       {tabs.map(tb => (
         <button key={tb.key} onClick={() => setTab(tb.key)} style={{
-          flex: 1, padding: "8px 4px 10px",
+          flex: 1, padding: "6px 2px 8px", minWidth: 0,
           background: tab === tb.key ? `linear-gradient(180deg, ${C.navy} 0%, #1e3d6e 100%)` : "transparent",
           color: tab === tb.key ? C.skyBlueLight : C.gray,
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 2, transition: "all 0.2s",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 1, transition: "all 0.2s",
         }}>
-          <span style={{ fontSize: 20 }}>{tb.icon}</span>
-          <span style={{ fontSize: 9, fontWeight: 600, textAlign: "center", lineHeight: 1.2 }}>{tb.label}</span>
+          <span style={{ fontSize: 16 }}>{tb.icon}</span>
+          <span style={{ fontSize: 7.5, fontWeight: 600, textAlign: "center", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{tb.label}</span>
         </button>
       ))}
     </nav>
@@ -879,10 +925,233 @@ function AnnoncesTab({ isAdmin, t, activeTab }) {
   );
 }
 
+// ─── PENSEE DU JOUR TAB ──────────────────────────────────────────────────────
+function getDayIndex() {
+  // Days since epoch, stable across the day for everyone
+  return Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+}
+
+function PenseeTab({ isAdmin, t, activeTab, lang }) {
+  const [pensees, setPensees] = useState([]);
+  const [showManage, setShowManage] = useState(false);
+  const [form, setForm] = useState({ texte: "", source: "" });
+
+  useEffect(() => { loadData(KEYS.pensees).then(setPensees); }, [activeTab]);
+
+  // Combine admin-added pensees with default ones for a richer rotation
+  const allPensees = [...DEFAULT_PENSEES, ...pensees];
+  const todayIndex = getDayIndex() % allPensees.length;
+  const todayPensee = allPensees[todayIndex];
+
+  async function add() {
+    if (!form.texte.trim()) return;
+    const entry = { ...form, id: Date.now().toString() };
+    const updated = [...pensees, entry];
+    setPensees(updated);
+    await saveData(KEYS.pensees, updated);
+    setForm({ texte: "", source: "" });
+  }
+
+  async function del(id) {
+    if (!confirm("Supprimer ?")) return;
+    const updated = pensees.filter(p => p.id !== id);
+    setPensees(updated);
+    await deleteItem(KEYS.pensees, id);
+    await saveData(KEYS.pensees, updated);
+  }
+
+  const dateStr = new Date().toLocaleDateString(lang === "he" ? "he-IL" : "fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
+  return (
+    <div style={{ padding: "20px 16px 80px" }}>
+      <div style={{
+        background: `linear-gradient(150deg, ${C.navy} 0%, #2a4a7c 60%, ${C.skyBlue} 130%)`,
+        borderRadius: 20, padding: "36px 24px", marginBottom: 20,
+        boxShadow: "0 6px 24px rgba(26,46,82,0.35)", textAlign: "center", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ fontSize: 13, color: C.skyBlueLight, textTransform: "capitalize", marginBottom: 14, letterSpacing: 0.5 }}>{dateStr}</div>
+        <div style={{ fontSize: 38, marginBottom: 14 }}>💭</div>
+        <p style={{ color: C.white, fontSize: 19, lineHeight: 1.6, fontWeight: 500, marginBottom: 16, fontStyle: "italic" }}>
+          « {todayPensee.texte} »
+        </p>
+        {todayPensee.source && (
+          <div style={{ color: C.skyBlueLight, fontSize: 13, fontWeight: 600 }}>— {todayPensee.source}</div>
+        )}
+      </div>
+
+      {isAdmin && (
+        <button onClick={() => setShowManage(true)} style={{ width: "100%", padding: 12, background: C.lightGray, color: C.navy, borderRadius: 10, fontWeight: 600, fontSize: 14, border: `1px solid ${C.skyBlue}55` }}>
+          ⚙️ {t.gererPensees}
+        </button>
+      )}
+
+      {showManage && (
+        <Modal>
+          <h3 style={{ color: C.navy, marginBottom: 12 }}>{t.gererPensees}</h3>
+
+          <label style={lbl}>{t.contenuPensee}</label>
+          <textarea value={form.texte} onChange={e => setForm(f => ({ ...f, texte: e.target.value }))} style={{ ...inp, height: 70, resize: "vertical" }} placeholder="Ex: La vraie richesse..." />
+
+          <label style={lbl}>{t.source}</label>
+          <input value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))} style={inp} placeholder="Ex: Pirké Avot 2:7" />
+
+          <button onClick={add} style={{ width: "100%", padding: 10, background: `linear-gradient(135deg, ${C.skyBlue}, #3a9cc8)`, color: C.white, borderRadius: 8, fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
+            + {t.ajouterPensee}
+          </button>
+
+          {pensees.length > 0 && (
+            <div style={{ borderTop: `1px solid ${C.lightGray}`, paddingTop: 12 }}>
+              {pensees.map(p => (
+                <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "8px 0", borderBottom: `1px solid ${C.lightGray}` }}>
+                  <div style={{ flex: 1, paddingRight: 8 }}>
+                    <div style={{ fontSize: 13, color: C.text }}>{p.texte}</div>
+                    {p.source && <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>— {p.source}</div>}
+                  </div>
+                  <button onClick={() => del(p.id)} style={{ background: "#fee2e2", color: C.danger, borderRadius: 6, padding: "3px 8px", fontSize: 11, flexShrink: 0 }}>{t.delete}</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ marginTop: 16 }}>
+            <button onClick={() => setShowManage(false)} style={{ width: "100%", padding: 10, background: C.lightGray, color: C.gray, borderRadius: 8 }}>{t.cancel}</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ─── PROGRAMME DE LA SEMAINE TAB ─────────────────────────────────────────────
+function getWeekStartLabel(lang) {
+  const now = new Date();
+  const day = now.getDay();
+  const sunday = new Date(now);
+  sunday.setDate(now.getDate() - day);
+  return sunday.toLocaleDateString(lang === "he" ? "he-IL" : "fr-FR", { day: "numeric", month: "long" });
+}
+
+function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
+  const [creneaux, setCreneaux] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({});
+
+  useEffect(() => { loadData(KEYS.programme).then(setCreneaux); }, [activeTab]);
+
+  const jours = [
+    { key: "dimanche", label: t.dimanche },
+    { key: "lundi", label: t.lundi },
+    { key: "mardi", label: t.mardi },
+    { key: "mercredi", label: t.mercredi },
+    { key: "jeudi", label: t.jeudi },
+    { key: "vendredi", label: t.vendredi },
+    { key: "samedi", label: t.samedi },
+  ];
+
+  function openAdd(jourKey) {
+    setForm({ jour: jourKey, intitule: "", horaire: "", lieu: "" });
+    setEditing(null);
+    setShowForm(true);
+  }
+  function openEdit(c) {
+    setForm({ ...c });
+    setEditing(c.id);
+    setShowForm(true);
+  }
+
+  async function save() {
+    const entry = { ...form, id: editing || Date.now().toString() };
+    const updated = editing ? creneaux.map(c => c.id === editing ? entry : c) : [...creneaux, entry];
+    setCreneaux(updated);
+    await saveData(KEYS.programme, updated);
+    setShowForm(false);
+  }
+
+  async function del(id) {
+    if (!confirm("Supprimer ?")) return;
+    const updated = creneaux.filter(c => c.id !== id);
+    setCreneaux(updated);
+    await deleteItem(KEYS.programme, id);
+    await saveData(KEYS.programme, updated);
+  }
+
+  return (
+    <div style={{ padding: "16px 12px 80px" }}>
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, borderRadius: 12, padding: "12px 16px", marginBottom: 16, color: C.white, textAlign: "center" }}>
+        <div style={{ fontSize: 13, color: C.skyBlueLight, fontWeight: 700 }}>📋 {t.semaineDu} {getWeekStartLabel(lang)}</div>
+      </div>
+
+      {creneaux.length === 0 && (
+        <div style={{ textAlign: "center", padding: "30px 20px", color: C.gray, fontSize: 14 }}>
+          {t.aucunProgramme}
+        </div>
+      )}
+
+      {jours.map(jour => {
+        const items = creneaux.filter(c => c.jour === jour.key).sort((a, b) => (a.horaire || "").localeCompare(b.horaire || ""));
+        if (items.length === 0 && !isAdmin) return null;
+        return (
+          <div key={jour.key} style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <div style={{ fontWeight: 700, color: C.navy, fontSize: 15 }}>{jour.label}</div>
+              {isAdmin && (
+                <button onClick={() => openAdd(jour.key)} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>
+                  + {t.ajouterCreneau}
+                </button>
+              )}
+            </div>
+            {items.length === 0 ? (
+              isAdmin && <div style={{ fontSize: 12, color: C.gray, paddingLeft: 4 }}>—</div>
+            ) : (
+              items.map(item => (
+                <Card key={item.id} style={{ marginBottom: 8 }}>
+                  <div style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontWeight: 600, color: C.navy, fontSize: 14 }}>{item.intitule}</div>
+                      <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>
+                        {item.horaire && <span>🕐 {item.horaire}</span>}
+                        {item.lieu && <span> · 📍 {item.lieu}</span>}
+                      </div>
+                    </div>
+                    {isAdmin && (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => openEdit(item)} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.edit}</button>
+                        <button onClick={() => del(item.id)} style={{ background: "#fee2e2", color: C.danger, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.delete}</button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        );
+      })}
+
+      {showForm && (
+        <Modal>
+          <h3 style={{ color: C.navy, marginBottom: 12 }}>{t.ajouterCreneau}</h3>
+          <label style={lbl}>{t.jourSemaine}</label>
+          <select value={form.jour} onChange={e => setForm(f => ({ ...f, jour: e.target.value }))} style={inp}>
+            {jours.map(j => <option key={j.key} value={j.key}>{j.label}</option>)}
+          </select>
+          <label style={lbl}>{t.intitule}</label>
+          <input value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} style={inp} placeholder="Ex: Chiour Rav Yaacov" />
+          <label style={lbl}>{t.horaire}</label>
+          <input type="time" value={form.horaire || ""} onChange={e => setForm(f => ({ ...f, horaire: e.target.value }))} style={inp} />
+          <label style={lbl}>{t.lieuOptionnel}</label>
+          <input value={form.lieu || ""} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} style={inp} placeholder="Ex: Salle principale" />
+          <ModalButtons onCancel={() => setShowForm(false)} onSave={save} t={t} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [lang, setLang] = useState("fr");
-  const [tab, setTab] = useState("shabbat");
+  const [tab, setTab] = useState("pensee");
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const t = T[lang];
@@ -894,13 +1163,15 @@ export default function App() {
         onAdminClick={() => isAdmin ? setIsAdmin(false) : setShowAdminModal(true)} />
       {showAdminModal && <AdminModal t={t} onLogin={() => { setIsAdmin(true); setShowAdminModal(false); }} onClose={() => setShowAdminModal(false)} />}
       <div style={{ direction: lang === "he" ? "rtl" : "ltr" }}>
-        {tab === "shabbat" && <ShabbatTab isAdmin={isAdmin} t={t} />}
-        {tab === "activites" && <ActivitesTab isAdmin={isAdmin} t={t} />}
-        {tab === "location" && <LocationTab isAdmin={isAdmin} t={t} />}
-        {tab === "annonces" && <AnnoncesTab isAdmin={isAdmin} t={t} />}
+        <div style={{display: tab === "pensee" ? "block" : "none"}}><PenseeTab isAdmin={isAdmin} t={t} activeTab={tab} lang={lang} /></div>
+        <div style={{display: tab === "programme" ? "block" : "none"}}><ProgrammeTab isAdmin={isAdmin} t={t} activeTab={tab} lang={lang} /></div>
+        <div style={{display: tab === "shabbat" ? "block" : "none"}}><ShabbatTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
+        <div style={{display: tab === "activites" ? "block" : "none"}}><ActivitesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
+        <div style={{display: tab === "annonces" ? "block" : "none"}}><AnnoncesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
+        <div style={{display: tab === "location" ? "block" : "none"}}><LocationTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         {tab === "reglements" && <ReglementsTab t={t} />}
       </div>
-      <TabBar tab={tab} setTab={setTab} t={t} />
+      <TabBar tab={tab} setTab={setTab} t={t} lang={lang} />
     </div>
   );
 }
