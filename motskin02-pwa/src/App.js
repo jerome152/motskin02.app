@@ -121,8 +121,10 @@ const T = {
     penseeDuJour: "Pensée du jour",
     ajouterPensee: "Ajouter une pensée",
     gererPensees: "Gérer les pensées",
-    source: "Source / Référence",
-    contenuPensee: "Texte de la pensée",
+    source: "Source / Référence (français)",
+    sourceHe: "Source / Référence (hébreu)",
+    contenuPensee: "Texte de la pensée (français)",
+    contenuPenseeHe: "Texte de la pensée (hébreu, optionnel)",
     semaineDu: "Semaine du",
     ajouterCreneau: "Ajouter un créneau",
     jourSemaine: "Jour",
@@ -196,8 +198,10 @@ const T = {
     penseeDuJour: "מחשבת היום",
     ajouterPensee: "הוסף מחשבה",
     gererPensees: "ניהול מחשבות",
-    source: "מקור",
-    contenuPensee: "טקסט המחשבה",
+    source: "מקור (צרפתית)",
+    sourceHe: "מקור (עברית)",
+    contenuPensee: "טקסט המחשבה (צרפתית)",
+    contenuPenseeHe: "טקסט המחשבה (עברית, אופציונלי)",
     semaineDu: "שבוע מתאריך",
     ajouterCreneau: "הוסף שעה",
     jourSemaine: "יום",
@@ -213,16 +217,16 @@ const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locat
 
 // Default rotating thoughts (used if admin hasn't added custom ones, or mixed in with them)
 const DEFAULT_PENSEES = [
-  { texte: "Celui qui sauve une vie sauve un monde entier.", source: "Talmud, Sanhédrin 37a" },
-  { texte: "Tout commencement est difficile.", source: "Mekhilta, Yitro" },
-  { texte: "Qui est riche ? Celui qui se réjouit de son sort.", source: "Pirké Avot 4:1" },
-  { texte: "N'aie pas peur, fils de Jacob, lève-toi et agis.", source: "Inspiré de Béréchit" },
-  { texte: "Là où il n'y a pas de farine, il n'y a pas de Torah ; là où il n'y a pas de Torah, il n'y a pas de farine.", source: "Pirké Avot 3:21" },
-  { texte: "Ne juge pas ton prochain avant de t'être mis à sa place.", source: "Pirké Avot 2:4" },
-  { texte: "Toute la Torah repose sur la paix.", source: "Michna, Guittin 59b" },
-  { texte: "Si je ne suis pas pour moi, qui le sera ? Si je ne suis que pour moi, que suis-je ? Et si pas maintenant, quand ?", source: "Hillel, Pirké Avot 1:14" },
-  { texte: "La modestie est la porte d'entrée de toute sagesse.", source: "Pensée juive traditionnelle" },
-  { texte: "Un sourire vaut plus que mille mots de réconfort.", source: "Tradition orale" },
+  { texte: "Celui qui sauve une vie sauve un monde entier.", source: "Talmud, Sanhédrin 37a", texteHe: "כל המקיים נפש אחת, מעלה עליו כאילו קיים עולם מלא.", sourceHe: "תלמוד, סנהדרין ל״ז א" },
+  { texte: "Tout commencement est difficile.", source: "Mekhilta, Yitro", texteHe: "כל התחלות קשות.", sourceHe: "מכילתא, יתרו" },
+  { texte: "Qui est riche ? Celui qui se réjouit de son sort.", source: "Pirké Avot 4:1", texteHe: "איזהו עשיר? השמח בחלקו.", sourceHe: "פרקי אבות ד׳ א׳" },
+  { texte: "N'aie pas peur, fils de Jacob, lève-toi et agis.", source: "Inspiré de Béréchit", texteHe: "אל תירא, בן יעקב, קום ועשה.", sourceHe: "בהשראת בראשית" },
+  { texte: "Là où il n'y a pas de farine, il n'y a pas de Torah ; là où il n'y a pas de Torah, il n'y a pas de farine.", source: "Pirké Avot 3:21", texteHe: "אם אין קמח, אין תורה; אם אין תורה, אין קמח.", sourceHe: "פרקי אבות ג׳ כ״א" },
+  { texte: "Ne juge pas ton prochain avant de t'être mis à sa place.", source: "Pirké Avot 2:4", texteHe: "אל תדין את חברך עד שתגיע למקומו.", sourceHe: "פרקי אבות ב׳ ד׳" },
+  { texte: "Toute la Torah repose sur la paix.", source: "Michna, Guittin 59b", texteHe: "כל התורה כולה לשם שלום.", sourceHe: "משנה, גיטין נ״ט ב" },
+  { texte: "Si je ne suis pas pour moi, qui le sera ? Si je ne suis que pour moi, que suis-je ? Et si pas maintenant, quand ?", source: "Hillel, Pirké Avot 1:14", texteHe: "אם אין אני לי, מי לי? וכשאני לעצמי, מה אני? ואם לא עכשיו, אימתי?", sourceHe: "הלל, פרקי אבות א׳ י״ד" },
+  { texte: "La modestie est la porte d'entrée de toute sagesse.", source: "Pensée juive traditionnelle", texteHe: "הענווה היא שער לכל חכמה.", sourceHe: "מחשבה יהודית מסורתית" },
+  { texte: "Un sourire vaut plus que mille mots de réconfort.", source: "Tradition orale", texteHe: "חיוך שווה יותר מאלף מילות ניחומים.", sourceHe: "מסורת בעל פה" },
 ];
 
 async function loadData(collectionName) {
@@ -934,7 +938,7 @@ function getDayIndex() {
 function PenseeTab({ isAdmin, t, activeTab, lang }) {
   const [pensees, setPensees] = useState([]);
   const [showManage, setShowManage] = useState(false);
-  const [form, setForm] = useState({ texte: "", source: "" });
+  const [form, setForm] = useState({ texte: "", source: "", texteHe: "", sourceHe: "" });
 
   useEffect(() => { loadData(KEYS.pensees).then(setPensees); }, [activeTab]);
 
@@ -949,7 +953,7 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
     const updated = [...pensees, entry];
     setPensees(updated);
     await saveData(KEYS.pensees, updated);
-    setForm({ texte: "", source: "" });
+    setForm({ texte: "", source: "", texteHe: "", sourceHe: "" });
   }
 
   async function del(id) {
@@ -960,22 +964,40 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
     await saveData(KEYS.pensees, updated);
   }
 
-  const dateStr = new Date().toLocaleDateString(lang === "he" ? "he-IL" : "fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const dateStrFr = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const dateStrHe = new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div style={{ padding: "20px 16px 80px" }}>
       <div style={{
         background: `linear-gradient(150deg, ${C.navy} 0%, #2a4a7c 60%, ${C.skyBlue} 130%)`,
-        borderRadius: 20, padding: "36px 24px", marginBottom: 20,
+        borderRadius: 20, padding: "32px 24px", marginBottom: 20,
         boxShadow: "0 6px 24px rgba(26,46,82,0.35)", textAlign: "center", position: "relative", overflow: "hidden",
       }}>
-        <div style={{ fontSize: 13, color: C.skyBlueLight, textTransform: "capitalize", marginBottom: 14, letterSpacing: 0.5 }}>{dateStr}</div>
-        <div style={{ fontSize: 38, marginBottom: 14 }}>💭</div>
-        <p style={{ color: C.white, fontSize: 19, lineHeight: 1.6, fontWeight: 500, marginBottom: 16, fontStyle: "italic" }}>
+        <div style={{ fontSize: 12, color: C.skyBlueLight, textTransform: "capitalize", marginBottom: 18, letterSpacing: 0.5 }}>
+          {dateStrFr} • {dateStrHe}
+        </div>
+        <div style={{ fontSize: 34, marginBottom: 16 }}>💭</div>
+
+        {/* French */}
+        <p style={{ color: C.white, fontSize: 18, lineHeight: 1.6, fontWeight: 500, marginBottom: 6, fontStyle: "italic" }}>
           « {todayPensee.texte} »
         </p>
         {todayPensee.source && (
-          <div style={{ color: C.skyBlueLight, fontSize: 13, fontWeight: 600 }}>— {todayPensee.source}</div>
+          <div style={{ color: C.skyBlueLight, fontSize: 12, fontWeight: 600, marginBottom: 18 }}>— {todayPensee.source}</div>
+        )}
+
+        {todayPensee.texteHe && (
+          <>
+            <div style={{ height: 1, background: "rgba(255,255,255,0.25)", margin: "0 30px 18px" }} />
+            {/* Hebrew */}
+            <p dir="rtl" style={{ color: C.white, fontSize: 19, lineHeight: 1.8, fontWeight: 500, marginBottom: 6 }}>
+              « {todayPensee.texteHe} »
+            </p>
+            {todayPensee.sourceHe && (
+              <div dir="rtl" style={{ color: C.skyBlueLight, fontSize: 13, fontWeight: 600 }}>— {todayPensee.sourceHe}</div>
+            )}
+          </>
         )}
       </div>
 
@@ -990,10 +1012,16 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
           <h3 style={{ color: C.navy, marginBottom: 12 }}>{t.gererPensees}</h3>
 
           <label style={lbl}>{t.contenuPensee}</label>
-          <textarea value={form.texte} onChange={e => setForm(f => ({ ...f, texte: e.target.value }))} style={{ ...inp, height: 70, resize: "vertical" }} placeholder="Ex: La vraie richesse..." />
+          <textarea value={form.texte} onChange={e => setForm(f => ({ ...f, texte: e.target.value }))} style={{ ...inp, height: 60, resize: "vertical" }} placeholder="Ex: La vraie richesse..." />
 
           <label style={lbl}>{t.source}</label>
           <input value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))} style={inp} placeholder="Ex: Pirké Avot 2:7" />
+
+          <label style={lbl}>{t.contenuPenseeHe}</label>
+          <textarea dir="rtl" value={form.texteHe} onChange={e => setForm(f => ({ ...f, texteHe: e.target.value }))} style={{ ...inp, height: 60, resize: "vertical" }} placeholder="כתוב כאן בעברית..." />
+
+          <label style={lbl}>{t.sourceHe}</label>
+          <input dir="rtl" value={form.sourceHe} onChange={e => setForm(f => ({ ...f, sourceHe: e.target.value }))} style={inp} placeholder="מקור בעברית" />
 
           <button onClick={add} style={{ width: "100%", padding: 10, background: `linear-gradient(135deg, ${C.skyBlue}, #3a9cc8)`, color: C.white, borderRadius: 8, fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
             + {t.ajouterPensee}
@@ -1006,6 +1034,7 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
                   <div style={{ flex: 1, paddingRight: 8 }}>
                     <div style={{ fontSize: 13, color: C.text }}>{p.texte}</div>
                     {p.source && <div style={{ fontSize: 11, color: C.gray, marginTop: 2 }}>— {p.source}</div>}
+                    {p.texteHe && <div dir="rtl" style={{ fontSize: 13, color: C.text, marginTop: 4 }}>{p.texteHe}</div>}
                   </div>
                   <button onClick={() => del(p.id)} style={{ background: "#fee2e2", color: C.danger, borderRadius: 6, padding: "3px 8px", fontSize: 11, flexShrink: 0 }}>{t.delete}</button>
                 </div>
