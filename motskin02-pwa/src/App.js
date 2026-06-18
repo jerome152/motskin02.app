@@ -56,6 +56,20 @@ function formatTime(isoOrTime) {
   return isoOrTime;
 }
 
+// Fetches the real Hebrew calendar date (e.g. "כ״ב בְּסִיוָן תשפ״ו") for a given JS Date
+async function fetchHebrewDate(date) {
+  try {
+    const yyyy = date.getFullYear();
+    const mm = date.getMonth() + 1;
+    const dd = date.getDate();
+    const r = await fetch(`https://www.hebcal.com/converter?cfg=json&gy=${yyyy}&gm=${mm}&gd=${dd}&g2h=1`);
+    const j = await r.json();
+    return j.hebrew || "";
+  } catch {
+    return "";
+  }
+}
+
 const T = {
   fr: {
     appName: "Beth Haknesset Motskin02",
@@ -941,8 +955,12 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
   const [pensees, setPensees] = useState([]);
   const [showManage, setShowManage] = useState(false);
   const [form, setForm] = useState({ texte: "", source: "", texteHe: "", sourceHe: "" });
+  const [hebrewDate, setHebrewDate] = useState("");
 
-  useEffect(() => { loadData(KEYS.pensees).then(setPensees); }, [activeTab]);
+  useEffect(() => {
+    loadData(KEYS.pensees).then(setPensees);
+    fetchHebrewDate(new Date()).then(setHebrewDate);
+  }, [activeTab]);
 
   // Combine admin-added pensees with default ones for a richer rotation
   const allPensees = [...DEFAULT_PENSEES, ...pensees];
@@ -967,7 +985,6 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
   }
 
   const dateStrFr = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-  const dateStrHe = new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div style={{ padding: "20px 16px 80px" }}>
@@ -977,7 +994,7 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
         boxShadow: "0 6px 24px rgba(26,46,82,0.35)", textAlign: "center", position: "relative", overflow: "hidden",
       }}>
         <div style={{ fontSize: 12, color: C.skyBlueLight, textTransform: "capitalize", marginBottom: 18, letterSpacing: 0.5 }}>
-          {dateStrFr} • {dateStrHe}
+          {dateStrFr} {hebrewDate && <span dir="rtl">• {hebrewDate}</span>}
         </div>
         <div style={{ fontSize: 34, marginBottom: 16 }}>💭</div>
 
@@ -1071,13 +1088,19 @@ function getCurrentWeekId() {
   return getWeekId(new Date());
 }
 
-function weekRangeLabel(weekId) {
+function weekRangeLabelFr(weekId) {
   const start = new Date(weekId + "T00:00:00");
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
-  const fr = `${start.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} – ${end.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
-  const he = `${start.toLocaleDateString("he-IL", { day: "numeric", month: "long" })} – ${end.toLocaleDateString("he-IL", { day: "numeric", month: "long" })}`;
-  return { fr, he };
+  return `${start.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} – ${end.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
+}
+
+async function weekRangeLabelHe(weekId) {
+  const start = new Date(weekId + "T00:00:00");
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const [startHe, endHe] = await Promise.all([fetchHebrewDate(start), fetchHebrewDate(end)]);
+  return `${startHe} – ${endHe}`;
 }
 
 // Default day events. These act as seed data: rendered until the admin has explicitly
@@ -1102,7 +1125,7 @@ function shareEvent(item) {
   }
 }
 
-function EventCard({ item, isAdmin, isDefaultKey, onEdit, onDelete, t }) {
+function EventCard({ item, isAdmin, onUp, onDown, onEdit, onDelete, t }) {
   return (
     <Card style={{ marginBottom: 8 }}>
       {item.photoData && <img src={item.photoData} alt="" style={{ width: "100%", height: 140, objectFit: "cover" }} />}
@@ -1111,17 +1134,21 @@ function EventCard({ item, isAdmin, isDefaultKey, onEdit, onDelete, t }) {
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, color: C.navy, fontSize: 14 }}>{item.intitule}</div>
             <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>
-              {item.horaire && <span>🕐 {item.horaire}</span>}
+              {item.date && <span>📅 {item.date} </span>}
+              {item.horaire && <span>🕐 {item.horaire}{item.heureFin ? ` → ${item.heureFin}` : ""}</span>}
               {item.lieu && <span> · 📍 {item.lieu}</span>}
             </div>
+            {item.description && <p style={{ fontSize: 12, color: C.gray, lineHeight: 1.5, marginTop: 6 }}>{item.description}</p>}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+        <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
           <button onClick={() => shareEvent(item)} style={{ background: "#25D366", color: "#fff", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600 }}>
             📤 {t.partager}
           </button>
           {isAdmin && (
             <>
+              {onUp && <button onClick={onUp} style={moveBtn}>{t.moveUp}</button>}
+              {onDown && <button onClick={onDown} style={moveBtn}>{t.moveDown}</button>}
               <button onClick={onEdit} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.edit}</button>
               <button onClick={onDelete} style={{ background: "#fee2e2", color: C.danger, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.delete}</button>
             </>
@@ -1132,7 +1159,8 @@ function EventCard({ item, isAdmin, isDefaultKey, onEdit, onDelete, t }) {
   );
 }
 
-function WeekBlock({ weekId, isAdmin, t, events, dayExtras, onAdd, onEdit, onEditDefault, onDelete, onExtrasEdit }) {
+
+function WeekBlock({ weekId, isAdmin, t, events, dayExtras, onAdd, onEdit, onEditDefault, onDelete, onMove, onExtrasEdit }) {
   const jours = [
     { key: "dimanche", label: t.dimanche },
     { key: "lundi", label: t.lundi },
@@ -1142,22 +1170,32 @@ function WeekBlock({ weekId, isAdmin, t, events, dayExtras, onAdd, onEdit, onEdi
     { key: "vendredi", label: t.vendredi },
     { key: "samedi", label: t.samedi },
   ];
-  const range = weekRangeLabel(weekId);
+  const rangeFr = weekRangeLabelFr(weekId);
+  const [rangeHe, setRangeHe] = useState("");
+
+  useEffect(() => {
+    weekRangeLabelHe(weekId).then(setRangeHe);
+  }, [weekId]);
 
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, borderRadius: 12, padding: "12px 16px", marginBottom: 14, color: C.white, textAlign: "center" }}>
-        <div style={{ fontSize: 13, color: C.skyBlueLight, fontWeight: 700 }}>📋 {t.semaineDu} {range.fr}</div>
-        <div style={{ fontSize: 12, color: C.skyBlueLight, marginTop: 2 }} dir="rtl">{range.he}</div>
+        <div style={{ fontSize: 13, color: C.skyBlueLight, fontWeight: 700 }}>📋 {t.semaineDu} {rangeFr}</div>
+        {rangeHe && <div style={{ fontSize: 12, color: C.skyBlueLight, marginTop: 2 }} dir="rtl">{rangeHe}</div>}
       </div>
 
       {jours.map(jour => {
-        const customItems = events.filter(c => c.jour === jour.key && !c.deleted).sort((a, b) => (a.horaire || "").localeCompare(b.horaire || ""));
+        // All items for this day (default seeds first, then custom events), ordered by _order if present
         const defaultsForDay = DEFAULT_DAY_EVENTS[jour.key] || [];
-        const visibleDefaults = defaultsForDay.filter(def => !events.some(c => c.id === `${weekId}_${def.key}`));
+        const visibleDefaults = defaultsForDay
+          .filter(def => !events.some(c => c.id === `${weekId}_${def.key}`))
+          .map(def => ({ ...def, id: `${weekId}_${def.key}`, isSeed: true }));
+        const customItems = events.filter(c => c.jour === jour.key && !c.deleted);
+        const allItems = [...visibleDefaults, ...customItems].sort((a, b) => (a._order ?? 999) - (b._order ?? 999));
+
         const extras = dayExtras[jour.key];
         const hasExtras = extras && (extras.seoudaEnabled || extras.petitDejEnabled);
-        const hasAnything = customItems.length > 0 || visibleDefaults.length > 0 || hasExtras;
+        const hasAnything = allItems.length > 0 || hasExtras;
 
         if (!hasAnything && !isAdmin) return null;
 
@@ -1179,17 +1217,12 @@ function WeekBlock({ weekId, isAdmin, t, events, dayExtras, onAdd, onEdit, onEdi
               </div>
             )}
 
-            {visibleDefaults.map(def => (
-              <EventCard key={def.key} item={def} isAdmin={isAdmin} isDefaultKey
-                onEdit={() => onEditDefault(jour.key, def)}
-                onDelete={() => onDelete(`${weekId}_${def.key}`, true, jour.key, def)}
-                t={t} />
-            ))}
-
-            {customItems.map(item => (
+            {allItems.map((item, idx) => (
               <EventCard key={item.id} item={item} isAdmin={isAdmin}
-                onEdit={() => onEdit(item)}
-                onDelete={() => onDelete(item.id, false)}
+                onUp={() => onMove(jour.key, allItems, idx, -1)}
+                onDown={() => onMove(jour.key, allItems, idx, 1)}
+                onEdit={() => item.isSeed ? onEditDefault(weekId, jour.key, item) : onEdit(item)}
+                onDelete={() => onDelete(item.id, item.isSeed, jour.key, item)}
                 t={t} />
             ))}
 
@@ -1240,12 +1273,11 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
       });
       setAllExtras(extras);
 
-      // Build the list of weeks to display: current week + any past week that has data
       const currentId = getCurrentWeekId();
       const weeksWithData = new Set([currentId]);
       events.forEach(e => { if (e.semaine) weeksWithData.add(e.semaine); });
       Object.keys(extras).forEach(w => weeksWithData.add(w));
-      const sorted = Array.from(weeksWithData).sort((a, b) => b.localeCompare(a)); // newest first
+      const sorted = Array.from(weeksWithData).sort((a, b) => b.localeCompare(a));
       setWeekIds(sorted);
     });
   }, [activeTab]);
@@ -1306,34 +1338,35 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
   }
 
   function openAdd(weekId, jourKey) {
-    setForm({ jour: jourKey, semaine: weekId, intitule: "", horaire: "", lieu: "", photoData: "" });
+    setForm({ jour: jourKey, semaine: weekId, intitule: "", date: "", horaire: "", heureFin: "", showHeureFin: false, lieu: "", description: "", photoData: "" });
     setEditing(null);
     setShowForm(true);
   }
   function openEdit(item) {
-    setForm({ ...item });
+    setForm({ ...item, showHeureFin: !!item.heureFin });
     setEditing(item.id);
     setShowForm(true);
   }
   function openEditDefault(weekId, jourKey, def) {
-    setForm({ jour: jourKey, semaine: weekId, intitule: def.intitule, horaire: def.horaire, lieu: def.lieu || "", photoData: "" });
+    setForm({ jour: jourKey, semaine: weekId, intitule: def.intitule, date: "", horaire: def.horaire, heureFin: "", showHeureFin: false, lieu: def.lieu || "", description: "", photoData: "" });
     setEditing(`${weekId}_${def.key}`);
     setShowForm(true);
   }
 
   async function save() {
-    const entry = { ...form, type: "event", id: editing || Date.now().toString() };
     const exists = allEvents.some(c => c.id === editing);
+    const existingOrder = exists ? allEvents.find(c => c.id === editing)._order : allEvents.filter(e => e.jour === form.jour && e.semaine === form.semaine).length;
+    const entry = { ...form, type: "event", id: editing || Date.now().toString(), _order: existingOrder ?? 0 };
     const updated = editing && exists ? allEvents.map(c => c.id === editing ? entry : c) : [...allEvents, entry];
     setAllEvents(updated);
     await persistAll(updated, undefined, undefined);
     setShowForm(false);
   }
 
-  async function del(id, isDefaultKey, jourKey, def) {
+  async function del(id, isSeed, jourKey, item) {
     if (!confirm("Supprimer ?")) return;
-    if (isDefaultKey) {
-      const weekId = id.split("_")[0] + "-" + id.split("_")[1] + "-" + id.split("_")[2];
+    if (isSeed) {
+      const weekId = id.substring(0, 10);
       const entry = { id, type: "event", deleted: true, jour: jourKey, semaine: weekId };
       const updated = [...allEvents.filter(c => c.id !== id), entry];
       setAllEvents(updated);
@@ -1344,6 +1377,41 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
       await deleteItem(KEYS.programme, id);
       await persistAll(updated, undefined, undefined);
     }
+  }
+
+  // Reorder items within a day: works across seed + custom items by persisting explicit _order on all of them
+  async function move(jourKey, allItemsForDay, idx, dir) {
+    const to = idx + dir;
+    if (to < 0 || to >= allItemsForDay.length) return;
+    const reordered = [...allItemsForDay];
+    [reordered[idx], reordered[to]] = [reordered[to], reordered[idx]];
+
+    // Materialize every item in this reordered list as a real event with updated _order,
+    // converting any seed defaults into persisted events so the new order sticks.
+    const weekId = reordered[0]?.semaine || (reordered[0]?.id || "").substring(0, 10) || getCurrentWeekId();
+    const updatedEvents = [...allEvents];
+    reordered.forEach((item, newIdx) => {
+      const realId = item.id;
+      const existingIdx = updatedEvents.findIndex(e => e.id === realId);
+      const materialized = {
+        id: realId,
+        type: "event",
+        jour: jourKey,
+        semaine: item.semaine || weekId,
+        intitule: item.intitule,
+        date: item.date || "",
+        horaire: item.horaire || "",
+        heureFin: item.heureFin || "",
+        lieu: item.lieu || "",
+        description: item.description || "",
+        photoData: item.photoData || "",
+        _order: newIdx,
+      };
+      if (existingIdx >= 0) updatedEvents[existingIdx] = materialized;
+      else updatedEvents.push(materialized);
+    });
+    setAllEvents(updatedEvents);
+    await persistAll(updatedEvents, undefined, undefined);
   }
 
   function handlePhotoUpload(e) {
@@ -1369,7 +1437,6 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
 
   return (
     <div style={{ padding: "16px 12px 80px" }}>
-      {/* TOUS LES JOURS - Horaire des Tfilots (global, not tied to a specific week) */}
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontWeight: 800, color: C.navy, fontSize: 16, marginBottom: 8 }}>🕯️ Horaire des Tfilot — Tous les jours</div>
         <Card>
@@ -1401,13 +1468,13 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
           dayExtras={allExtras[weekId] || {}}
           onAdd={(jourKey) => openAdd(weekId, jourKey)}
           onEdit={openEdit}
-          onEditDefault={(jourKey, def) => openEditDefault(weekId, jourKey, def)}
+          onEditDefault={openEditDefault}
           onDelete={del}
+          onMove={move}
           onExtrasEdit={(jourKey) => openExtrasEdit(weekId, jourKey)}
         />
       ))}
 
-      {/* Modal: edit Minha override */}
       {showMinhaEdit && (
         <Modal>
           <h3 style={{ color: C.navy, marginBottom: 12 }}>Heure de Minha</h3>
@@ -1421,11 +1488,9 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
         </Modal>
       )}
 
-      {/* Modal: edit Seouda / Petit-déjeuner */}
       {showExtrasEdit && (
         <Modal>
           <h3 style={{ color: C.navy, marginBottom: 12 }}>Seouda / Petit-déj — {jours.find(j => j.key === showExtrasEdit.jour)?.label}</h3>
-
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <input type="checkbox" checked={extrasForm.seoudaEnabled} onChange={e => setExtrasForm(f => ({ ...f, seoudaEnabled: e.target.checked }))} id="seoudaEnabled" />
             <label htmlFor="seoudaEnabled" style={{ fontSize: 14 }}>🍞 Seouda après Arvit</label>
@@ -1433,7 +1498,6 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
           {extrasForm.seoudaEnabled && (
             <textarea value={extrasForm.seoudaTexte} onChange={e => setExtrasForm(f => ({ ...f, seoudaTexte: e.target.value }))} style={{ ...inp, height: 60, resize: "vertical", marginBottom: 12 }} placeholder="Ex: Seouda offerte par la famille Cohen..." />
           )}
-
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <input type="checkbox" checked={extrasForm.petitDejEnabled} onChange={e => setExtrasForm(f => ({ ...f, petitDejEnabled: e.target.checked }))} id="petitDejEnabled" />
             <label htmlFor="petitDejEnabled" style={{ fontSize: 14 }}>🥐 Petit-déjeuner</label>
@@ -1441,12 +1505,10 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
           {extrasForm.petitDejEnabled && (
             <textarea value={extrasForm.petitDejTexte} onChange={e => setExtrasForm(f => ({ ...f, petitDejTexte: e.target.value }))} style={{ ...inp, height: 60, resize: "vertical", marginBottom: 12 }} placeholder="Ex: Petit-déjeuner après Chakharit..." />
           )}
-
           <ModalButtons onCancel={() => setShowExtrasEdit(null)} onSave={saveExtras} t={t} />
         </Modal>
       )}
 
-      {/* Modal: add/edit day event */}
       {showForm && (
         <Modal>
           <h3 style={{ color: C.navy, marginBottom: 12 }}>{t.ajouterCreneau}</h3>
@@ -1456,13 +1518,25 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
           </select>
           <label style={lbl}>{t.intitule}</label>
           <input value={form.intitule || ""} onChange={e => setForm(f => ({ ...f, intitule: e.target.value }))} style={inp} placeholder="Ex: Chiour Rav Yaacov" />
+          <PhotoInput photoData={form.photoData} onChange={d => setForm(f => ({ ...f, photoData: d }))} t={t} />
+          <label style={lbl}>{t.date} <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12 }}>(optionnel, date ou texte libre)</span></label>
+          <input type="text" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inp} placeholder="Ex: 25/06/2026" />
           <label style={lbl}>{t.horaire}</label>
           <input type="time" value={form.horaire || ""} onChange={e => setForm(f => ({ ...f, horaire: e.target.value }))} style={inp} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
+            <input type="checkbox" checked={form.showHeureFin || false} onChange={e => setForm(f => ({ ...f, showHeureFin: e.target.checked }))} id="heureFinProg" />
+            <label htmlFor="heureFinProg" style={{ fontSize: 14 }}>🕐 Ajouter une heure de fin</label>
+          </div>
+          {form.showHeureFin && (
+            <>
+              <label style={lbl}>Heure de fin</label>
+              <input type="time" value={form.heureFin || ""} onChange={e => setForm(f => ({ ...f, heureFin: e.target.value }))} style={inp} />
+            </>
+          )}
           <label style={lbl}>{t.lieuOptionnel}</label>
           <input value={form.lieu || ""} onChange={e => setForm(f => ({ ...f, lieu: e.target.value }))} style={inp} placeholder="Ex: Salle principale" />
-          <label style={lbl}>{t.uploadPhoto} (optionnel)</label>
-          <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ marginBottom: 8 }} />
-          {form.photoData && <img src={form.photoData} style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 8, marginBottom: 8 }} alt="" />}
+          <label style={lbl}>Description <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12 }}>(optionnel)</span></label>
+          <textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...inp, height: 70, resize: "vertical" }} placeholder="Détails de l'événement..." />
           <ModalButtons onCancel={() => setShowForm(false)} onSave={save} t={t} />
         </Modal>
       )}
