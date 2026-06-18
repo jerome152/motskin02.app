@@ -117,7 +117,7 @@ const T = {
     texteReq: "Message obligatoire",
     annonceAdded: "Annonce publiée !",
     pensee: "Pensée du jour",
-    programme: "Programme",
+    programme: "Semaine",
     penseeDuJour: "Pensée du jour",
     ajouterPensee: "Ajouter une pensée",
     gererPensees: "Gérer les pensées",
@@ -194,7 +194,7 @@ const T = {
     texteReq: "הודעה חובה",
     annonceAdded: "ההודעה פורסמה!",
     pensee: "מחשבת היום",
-    programme: "תוכנית",
+    programme: "שבוע",
     penseeDuJour: "מחשבת היום",
     ajouterPensee: "הוסף מחשבה",
     gererPensees: "ניהול מחשבות",
@@ -1051,7 +1051,9 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
   );
 }
 
-// ─── PROGRAMME DE LA SEMAINE TAB ─────────────────────────────────────────────
+// ─── SEMAINE TAB (Programme de la semaine) ───────────────────────────────────
+const ZMANIM_API = "https://www.hebcal.com/zmanim?cfg=json&geonameid=293807";
+
 function getWeekStartLabel(lang) {
   const now = new Date();
   const day = now.getDay();
@@ -1060,13 +1062,105 @@ function getWeekStartLabel(lang) {
   return sunday.toLocaleDateString(lang === "he" ? "he-IL" : "fr-FR", { day: "numeric", month: "long" });
 }
 
+// Bi-weekly toggle: Tanya happened June 15 2026 (a Monday). Compute parity from that anchor.
+function isTanyaWeek() {
+  const anchor = new Date(2026, 5, 15); // June 15 2026 = course happened, so NEXT Monday is off, the one after is on
+  const now = new Date();
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weeksSince = Math.floor((now - anchor) / msPerWeek);
+  // weeksSince = 0 the week of June 15 (course happened that week) -> next occurrence is weeksSince even? 
+  // Course happened on weeksSince=0. Next course is weeksSince=2, 4... (every 2 weeks)
+  return weeksSince % 2 === 0;
+}
+
 function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
-  const [creneaux, setCreneaux] = useState([]);
+  const [sunset, setSunset] = useState(null);
+  const [minhaOverride, setMinhaOverride] = useState(null);
+  const [seoudaInfo, setSeoudaInfo] = useState({ enabled: false, texte: "" });
+  const [events, setEvents] = useState([]); // specific day events (Dimanche/Lundi/Mardi etc, admin manageable)
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const [showMinhaEdit, setShowMinhaEdit] = useState(false);
+  const [minhaInput, setMinhaInput] = useState("");
+  const [showSeoudaEdit, setShowSeoudaEdit] = useState(false);
 
-  useEffect(() => { loadData(KEYS.programme).then(setCreneaux); }, [activeTab]);
+  useEffect(() => {
+    fetchSunset();
+    loadData(KEYS.programme).then(data => {
+      setEvents(data.filter(d => d.type === "event"));
+      const minhaDoc = data.find(d => d.type === "minha_override");
+      if (minhaDoc) setMinhaOverride(minhaDoc.value);
+      const seoudaDoc = data.find(d => d.type === "seouda");
+      if (seoudaDoc) setSeoudaInfo({ enabled: seoudaDoc.enabled, texte: seoudaDoc.texte || "" });
+    });
+  }, [activeTab]);
+
+  async function fetchSunset() {
+    try {
+      const r = await fetch(ZMANIM_API);
+      const j = await r.json();
+      if (j.times && j.times.sunset) setSunset(formatTime(j.times.sunset));
+    } catch {}
+  }
+
+  // Default Minha: 15 min before sunset, rounded to nearest 5
+  const defaultMinha = sunset ? addMinutes(sunset, -15, true) : null;
+  const minhaTime = minhaOverride || defaultMinha;
+
+  async function persistProgrammeMeta(updatedEvents, updatedMinha, updatedSeouda) {
+    const metaDocs = [];
+    if (updatedMinha !== undefined) metaDocs.push({ id: "minha_override", type: "minha_override", value: updatedMinha });
+    if (updatedSeouda !== undefined) metaDocs.push({ id: "seouda", type: "seouda", enabled: updatedSeouda.enabled, texte: updatedSeouda.texte });
+    const all = [...updatedEvents, ...metaDocs];
+    await saveData(KEYS.programme, all);
+  }
+
+  async function saveMinha() {
+    const updated = minhaInput.trim() || null;
+    setMinhaOverride(updated);
+    await persistProgrammeMeta(events, updated, undefined);
+    setShowMinhaEdit(false);
+  }
+
+  async function resetMinha() {
+    setMinhaOverride(null);
+    await persistProgrammeMeta(events, null, undefined);
+    setShowMinhaEdit(false);
+  }
+
+  async function saveSeouda() {
+    setSeoudaInfo(seoudaInfo);
+    await persistProgrammeMeta(events, undefined, seoudaInfo);
+    setShowSeoudaEdit(false);
+  }
+
+  function openAdd(jourKey) {
+    setForm({ jour: jourKey, intitule: "", horaire: "", lieu: "", type: "event" });
+    setEditing(null);
+    setShowForm(true);
+  }
+  function openEdit(c) {
+    setForm({ ...c });
+    setEditing(c.id);
+    setShowForm(true);
+  }
+
+  async function save() {
+    const entry = { ...form, type: "event", id: editing || Date.now().toString() };
+    const updated = editing ? events.map(c => c.id === editing ? entry : c) : [...events, entry];
+    setEvents(updated);
+    await persistProgrammeMeta(updated, undefined, undefined);
+    setShowForm(false);
+  }
+
+  async function del(id) {
+    if (!confirm("Supprimer ?")) return;
+    const updated = events.filter(c => c.id !== id);
+    setEvents(updated);
+    await deleteItem(KEYS.programme, id);
+    await persistProgrammeMeta(updated, undefined, undefined);
+  }
 
   const jours = [
     { key: "dimanche", label: t.dimanche },
@@ -1078,32 +1172,7 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
     { key: "samedi", label: t.samedi },
   ];
 
-  function openAdd(jourKey) {
-    setForm({ jour: jourKey, intitule: "", horaire: "", lieu: "" });
-    setEditing(null);
-    setShowForm(true);
-  }
-  function openEdit(c) {
-    setForm({ ...c });
-    setEditing(c.id);
-    setShowForm(true);
-  }
-
-  async function save() {
-    const entry = { ...form, id: editing || Date.now().toString() };
-    const updated = editing ? creneaux.map(c => c.id === editing ? entry : c) : [...creneaux, entry];
-    setCreneaux(updated);
-    await saveData(KEYS.programme, updated);
-    setShowForm(false);
-  }
-
-  async function del(id) {
-    if (!confirm("Supprimer ?")) return;
-    const updated = creneaux.filter(c => c.id !== id);
-    setCreneaux(updated);
-    await deleteItem(KEYS.programme, id);
-    await saveData(KEYS.programme, updated);
-  }
+  const tanyaActive = isTanyaWeek();
 
   return (
     <div style={{ padding: "16px 12px 80px" }}>
@@ -1111,15 +1180,47 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
         <div style={{ fontSize: 13, color: C.skyBlueLight, fontWeight: 700 }}>📋 {t.semaineDu} {getWeekStartLabel(lang)}</div>
       </div>
 
-      {creneaux.length === 0 && (
-        <div style={{ textAlign: "center", padding: "30px 20px", color: C.gray, fontSize: 14 }}>
-          {t.aucunProgramme}
-        </div>
-      )}
+      {/* TOUS LES JOURS - Horaire des Tfilots */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ fontWeight: 800, color: C.navy, fontSize: 16, marginBottom: 8 }}>🕯️ Horaire des Tfilot — Tous les jours</div>
+        <Card>
+          <div style={{ padding: "14px 16px" }}>
+            <Row label="☀️ Chakharit" value="08:00" bold />
+            <Row label="📚 Chiour avec Rabbi Yossef" value="09:00" bold />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${C.lightGray}` }}>
+              <span style={{ color: C.gray, fontSize: 13 }}>🙏 Minha suivie de Arvit</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: 13, color: C.navy }}>{minhaTime || "—"}</span>
+                {isAdmin && (
+                  <button onClick={() => { setMinhaInput(minhaOverride || ""); setShowMinhaEdit(true); }} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "2px 7px", fontSize: 11 }}>✏️</button>
+                )}
+              </div>
+            </div>
+            {!minhaOverride && defaultMinha && (
+              <div style={{ fontSize: 11, color: C.gray, marginTop: 4 }}>Calculé automatiquement : 15 min avant la shkia à Ra'anana ({sunset})</div>
+            )}
+
+            {seoudaInfo.enabled && seoudaInfo.texte && (
+              <div style={{ background: `${C.skyBlue}15`, padding: "8px 10px", borderRadius: 8, marginTop: 10, fontSize: 13, color: C.navy }}>
+                🍞 <strong>Seouda / après Arvit :</strong> {seoudaInfo.texte}
+              </div>
+            )}
+
+            {isAdmin && (
+              <button onClick={() => setShowSeoudaEdit(true)} style={{ width: "100%", marginTop: 10, padding: 8, background: C.lightGray, color: C.navy, borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
+                ⚙️ Gérer Seouda / texte après Arvit (semaine)
+              </button>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* JOURS SPECIFIQUES */}
+      <div style={{ fontWeight: 800, color: C.navy, fontSize: 16, marginBottom: 8 }}>📅 Événements par jour</div>
 
       {jours.map(jour => {
-        const items = creneaux.filter(c => c.jour === jour.key).sort((a, b) => (a.horaire || "").localeCompare(b.horaire || ""));
-        if (items.length === 0 && !isAdmin) return null;
+        const items = events.filter(c => c.jour === jour.key).sort((a, b) => (a.horaire || "").localeCompare(b.horaire || ""));
+        // Special handling: show built-in defaults as informational hints if admin hasn't overridden
         return (
           <div key={jour.key} style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1130,33 +1231,88 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
                 </button>
               )}
             </div>
-            {items.length === 0 ? (
-              isAdmin && <div style={{ fontSize: 12, color: C.gray, paddingLeft: 4 }}>—</div>
-            ) : (
-              items.map(item => (
-                <Card key={item.id} style={{ marginBottom: 8 }}>
-                  <div style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontWeight: 600, color: C.navy, fontSize: 14 }}>{item.intitule}</div>
-                      <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>
-                        {item.horaire && <span>🕐 {item.horaire}</span>}
-                        {item.lieu && <span> · 📍 {item.lieu}</span>}
-                      </div>
-                    </div>
-                    {isAdmin && (
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => openEdit(item)} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.edit}</button>
-                        <button onClick={() => del(item.id)} style={{ background: "#fee2e2", color: C.danger, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.delete}</button>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))
+
+            {/* Default suggestions shown only if no custom event exists yet for that day, purely informational from the request */}
+            {jour.key === "dimanche" && items.length === 0 && (
+              <Card style={{ marginBottom: 8 }}>
+                <div style={{ padding: "10px 14px" }}>
+                  <div style={{ fontWeight: 600, color: C.navy, fontSize: 14 }}>Kollel</div>
+                  <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>🕐 20:15</div>
+                </div>
+              </Card>
             )}
+            {jour.key === "lundi" && items.length === 0 && (
+              <Card style={{ marginBottom: 8, opacity: tanyaActive ? 1 : 0.55 }}>
+                <div style={{ padding: "10px 14px" }}>
+                  <div style={{ fontWeight: 600, color: C.navy, fontSize: 14 }}>Tanya Mental en hébreu — avec le Rav Oded Kravtchik</div>
+                  <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>🕐 20:30</div>
+                  <div style={{ fontSize: 11, color: tanyaActive ? "#16a34a" : C.gray, marginTop: 4, fontWeight: 600 }}>
+                    {tanyaActive ? "✅ Cours cette semaine (une semaine sur deux)" : "⏸️ Pas de cours cette semaine (une semaine sur deux)"}
+                  </div>
+                </div>
+              </Card>
+            )}
+            {jour.key === "mardi" && items.length === 0 && (
+              <Card style={{ marginBottom: 8 }}>
+                <div style={{ padding: "10px 14px" }}>
+                  <div style={{ fontWeight: 600, color: C.navy, fontSize: 14 }}>Orot du Rav Kook — par Rabbi Yaacov</div>
+                </div>
+              </Card>
+            )}
+
+            {items.map(item => (
+              <Card key={item.id} style={{ marginBottom: 8 }}>
+                <div style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: C.navy, fontSize: 14 }}>{item.intitule}</div>
+                    <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>
+                      {item.horaire && <span>🕐 {item.horaire}</span>}
+                      {item.lieu && <span> · 📍 {item.lieu}</span>}
+                    </div>
+                  </div>
+                  {isAdmin && (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => openEdit(item)} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.edit}</button>
+                      <button onClick={() => del(item.id)} style={{ background: "#fee2e2", color: C.danger, borderRadius: 6, padding: "4px 8px", fontSize: 11 }}>{t.delete}</button>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
           </div>
         );
       })}
 
+      {/* Modal: edit Minha override */}
+      {showMinhaEdit && (
+        <Modal>
+          <h3 style={{ color: C.navy, marginBottom: 12 }}>Heure de Minha</h3>
+          <label style={lbl}>Heure personnalisée (laisser vide pour calcul automatique)</label>
+          <input type="time" value={minhaInput} onChange={e => setMinhaInput(e.target.value)} style={inp} />
+          <div style={{ fontSize: 12, color: C.gray, marginBottom: 12 }}>Par défaut : {defaultMinha} (15 min avant la shkia, arrondi à 5 min)</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={resetMinha} style={{ flex: 1, padding: 10, background: C.lightGray, color: C.gray, borderRadius: 8, fontSize: 13 }}>Revenir au calcul auto</button>
+            <button onClick={saveMinha} style={{ flex: 1, padding: 10, background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, color: C.skyBlueLight, borderRadius: 8, fontWeight: 700, fontSize: 13 }}>{t.save}</button>
+          </div>
+          <button onClick={() => setShowMinhaEdit(false)} style={{ width: "100%", marginTop: 8, padding: 10, background: "transparent", color: C.gray, borderRadius: 8, fontSize: 13 }}>{t.cancel}</button>
+        </Modal>
+      )}
+
+      {/* Modal: edit Seouda */}
+      {showSeoudaEdit && (
+        <Modal>
+          <h3 style={{ color: C.navy, marginBottom: 12 }}>Seouda / texte après Arvit (semaine)</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <input type="checkbox" checked={seoudaInfo.enabled} onChange={e => setSeoudaInfo(s => ({ ...s, enabled: e.target.checked }))} id="seoudaEnabled" />
+            <label htmlFor="seoudaEnabled" style={{ fontSize: 14 }}>Afficher cette section</label>
+          </div>
+          <label style={lbl}>Texte</label>
+          <textarea value={seoudaInfo.texte} onChange={e => setSeoudaInfo(s => ({ ...s, texte: e.target.value }))} style={{ ...inp, height: 70, resize: "vertical" }} placeholder="Ex: Seouda offerte par la famille Cohen..." />
+          <ModalButtons onCancel={() => setShowSeoudaEdit(false)} onSave={saveSeouda} t={t} />
+        </Modal>
+      )}
+
+      {/* Modal: add/edit day event */}
       {showForm && (
         <Modal>
           <h3 style={{ color: C.navy, marginBottom: 12 }}>{t.ajouterCreneau}</h3>
