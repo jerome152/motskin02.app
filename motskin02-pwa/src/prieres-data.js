@@ -7,6 +7,7 @@ export const PRIERES = [
   {
     id: "brahot-hashakhar",
     titre: "Birkhot HaShahar",
+    titreHebreu: "בִּרְכוֹת הַשַּׁחַר",
     sousTitre: "Bénédictions du matin",
     icone: "🌅",
     hebreu: `מוֹדֶה אֲנִי לְפָנֶיךָ מֶלֶךְ חַי וְקַיָּם, שֶׁהֶחֱזַרְתָּ בִּי נִשְׁמָתִי בְּחֶמְלָה, רַבָּה אֱמוּנָתֶךָ.
@@ -56,6 +57,7 @@ Bénédictions : Béni sois-Tu, Éternel notre Dieu, Roi du monde, qui as donné
   {
     id: "asher-yatsar",
     titre: "Asher Yatsar",
+    titreHebreu: "אֲשֶׁר יָצַר",
     sousTitre: "Bénédiction après les besoins naturels",
     icone: "🙏",
     hebreu: `בָּרוּךְ אַתָּה אֲדֹנָי, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר יָצַר אֶת הָאָדָם בְּחׇכְמָה, וּבָרָא בוֹ נְקָבִים נְקָבִים, חֲלוּלִים חֲלוּלִים. גָּלוּי וְיָדֽוּעַ לִפְנֵי כִסֵּא כְבוֹדֶֽךָ, שֶׁאִם יִסָּתֵם אֶחָד מֵהֶם, אוֹ אִם יִפָּתֵח אֶחָד מֵהֶם, אִי אֶפְשַׁר לְהִתְקַיֵּם אֲפִלּוּ שָׁעָה אֶחָת. בָּרוּךְ אַתָּה אֲדֹנָי, רוֹפֵא כׇל בָּשָׂר וּמַפְלִיא לַעֲשׂוֹת.`,
@@ -65,6 +67,7 @@ Bénédictions : Béni sois-Tu, Éternel notre Dieu, Roi du monde, qui as donné
   {
     id: "tfilat-haderekh",
     titre: "Tfilat HaDérèkh",
+    titreHebreu: "תְּפִלַּת הַדֶּרֶךְ",
     sousTitre: "Prière du voyageur",
     icone: "🚗",
     hebreu: `יְהִי רָצוֹן מִלְּפָנֶיךָ יְהֹוָה אֱלֹהֵינוּ וֵאלֹהֵי אֲבוֹתֵינוּ, שֶׁתּוֹלִיכֵנוּ לְשָׁלוֹם וְתַצְעִידֵנוּ לְשָׁלוֹם וְתַדְרִיכֵנוּ לְשָׁלוֹם, וְתִסְמְכֵנוּ לְשָׁלוֹם, וְתַגִּיעֵנוּ לִמְחוֹז חֶפְצֵנוּ לְחַיִּים וּלְשִׂמְחָה וּלְשָׁלוֹם (אם חוזר באותו יום: וְתַחֲזִירֵנוּ לְשָׁלוֹם). וְתַצִּילֵנוּ מִכַּף כָּל אוֹיֵב וְאוֹרֵב וְלִסְטִים וְחַיּוֹת רָעוֹת בַּדֶּרֶךְ, וּמִכָּל מִינֵי פֻּרְעָנִיּוֹת הַמִּתְרַגְּשׁוֹת לָבוֹא לָעוֹלָם. וְתִשְׁלַח בְּרָכָה בְּכָל מַעֲשֵׂה יָדֵינוּ, וְתִתְּנֵנוּ לְחֵן וּלְחֶסֶד וּלְרַחֲמִים בְּעֵינֶיךָ וּבְעֵינֵי כׇל רוֹאֵינוּ, וְתִשְׁמַע קוֹל תַּחֲנוּנֵינוּ, כִּי אֵל שׁוֹמֵעַ תְּפִלָּה וְתַחֲנוּן אַתָּה. כִּי מַלְאָכָיו יְצַוֶּה לָּךְ לִשְׁמָרְךָ בְּכׇל דְּרָכֶיךָ. יְהֹוָה יִשְׁמׇר צֵאתְךָ וּבוֹאֶךָ מֵעַתָּה וְעַד עוֹלָם. בָּרוּךְ אַתָּה יְהֹוָה שׁוֹמֵעַ תְּפִלָּה.`,
@@ -74,6 +77,7 @@ Bénédictions : Béni sois-Tu, Éternel notre Dieu, Roi du monde, qui as donné
   {
     id: "meein-chaloch",
     titre: "Méein Chaloch",
+    titreHebreu: "בְּרָכָה מֵעֵין שָׁלוֹש",
     sousTitre: "Bénédiction après gâteaux, vin ou fruits (« Al HaMihya »)",
     icone: "🍞",
     hebreu: `בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם,
@@ -93,41 +97,97 @@ Baroukh Ata Adonaï, al haaretz véal (hamih'ya / haperot / péri haguéfen).`,
   {
     id: "birkat-hamazon",
     titre: "Birkat HaMazon",
+    titreHebreu: "בִּרְכַּת הַמָּזוֹן",
     sousTitre: "Bénédiction après le repas (avec pain)",
     icone: "🍽️",
-    hebreu: `שִׁיר הַמַּעֲלוֹת, בְּשׁוּב יְהֹוָה אֶת שִׁיבַת צִיּוֹן הָיִינוּ כְּחֹלְמִים... (בשבת וחג)
+    hebreu: `(בשבת ויום טוב:) שִׁיר הַמַּעֲלוֹת, בְּשׁוּב יְהֹוָה אֶת שִׁיבַת צִיּוֹן הָיִינוּ כְּחֹלְמִים. אָז יִמָּלֵא שְׂחוֹק פִּינוּ וּלְשׁוֹנֵנוּ רִנָּה, אָז יֹאמְרוּ בַגּוֹיִם הִגְדִּיל יְהֹוָה לַעֲשׂוֹת עִם אֵלֶּה. הִגְדִּיל יְהֹוָה לַעֲשׂוֹת עִמָּנוּ הָיִינוּ שְׂמֵחִים. שׁוּבָה יְהֹוָה אֶת שְׁבִיתֵנוּ כַּאֲפִיקִים בַּנֶּגֶב. הַזֹּרְעִים בְּדִמְעָה בְּרִנָּה יִקְצֹרוּ. הָלוֹךְ יֵלֵךְ וּבָכֹה נֹשֵׂא מֶשֶׁךְ הַזָּרַע, בֹּא יָבֹא בְרִנָּה נֹשֵׂא אֲלֻמֹּתָיו.
 
-בָּרוּךְ אַתָּה יְהֹוָה אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, הַזָּן אֶת הָעוֹלָם כֻּלּוֹ בְּטוּבוֹ בְּחֵן בְּחֶסֶד וּבְרַחֲמִים, הוּא נוֹתֵן לֶחֶם לְכׇל בָּשָׂר כִּי לְעוֹלָם חַסְדּוֹ. וּבְטוּבוֹ הַגָּדוֹל תָּמִיד לֹא חָסַר לָנוּ וְאַל יֶחְסַר לָנוּ מָזוֹן לְעוֹלָם וָעֶד. בָּרוּךְ אַתָּה יְהֹוָה, הַזָּן אֶת הַכֹּל.
+(בחול:) עַל נַהֲרוֹת בָּבֶל שָׁם יָשַׁבְנוּ גַּם בָּכִינוּ בְּזׇכְרֵנוּ אֶת צִיּוֹן. עַל עֲרָבִים בְּתוֹכָהּ תָּלִינוּ כִּנֹּרוֹתֵינוּ. כִּי שָׁם שְׁאֵלוּנוּ שׁוֹבֵינוּ דִּבְרֵי שִׁיר, וְתוֹלָלֵינוּ שִׂמְחָה, שִׁירוּ לָנוּ מִשִּׁיר צִיּוֹן. אֵיךְ נָשִׁיר אֶת שִׁיר יְהֹוָה עַל אַדְמַת נֵכָר.
 
-נוֹדֶה לְּךָ יְהֹוָה אֱלֹהֵינוּ עַל שֶׁהִנְחַלְתָּ לַאֲבוֹתֵינוּ אֶרֶץ חֶמְדָּה טוֹבָה וּרְחָבָה, וְעַל שֶׁהוֹצֵאתָנוּ מֵאֶרֶץ מִצְרַיִם וּפְדִיתָנוּ מִבֵּית עֲבָדִים, וְעַל בְּרִיתְךָ שֶׁחָתַמְתָּ בִּבְשָׂרֵנוּ, וְעַל תּוֹרָתְךָ שֶׁלִּמַּדְתָּנוּ. עַל הַכֹּל יְהֹוָה אֱלֹהֵינוּ אֲנַחְנוּ מוֹדִים לָךְ וּמְבָרְכִים אֶת שְׁמָךְ. בָּרוּךְ אַתָּה יְהֹוָה, עַל הָאָרֶץ וְעַל הַמָּזוֹן.
+(לזימון, אם מברכים בשלושה ויותר:)
+הַמְזַמֵּן: רַבּוֹתַי נְבָרֵךְ.
+הַמְסֻבִּים: יְהִי שֵׁם יְהֹוָה מְבֹרָךְ מֵעַתָּה וְעַד עוֹלָם.
+הַמְזַמֵּן: בִּרְשׁוּת מָרָנָן וְרַבָּנָן וְרַבּוֹתַי, נְבָרֵךְ (בעשרה: אֱלֹהֵינוּ) שֶׁאָכַלְנוּ מִשֶּׁלוֹ.
+הַמְסֻבִּים: בָּרוּךְ (בעשרה: אֱלֹהֵינוּ) שֶׁאָכַלְנוּ מִשֶּׁלּוֹ וּבְטוּבוֹ חָיִינוּ.
+הַמְזַמֵּן: בָּרוּךְ (בעשרה: אֱלֹהֵינוּ) שֶׁאָכַלְנוּ מִשֶּׁלּוֹ וּבְטוּבוֹ הַגָּדוֹל תָּמִיד חָיִינוּ.
 
-רַחֵם יְהֹוָה אֱלֹהֵינוּ עָלֵינוּ וְעַל יִשְׂרָאֵל עַמָּךְ, וְעַל יְרוּשָׁלַיִם עִירָךְ, וְעַל צִיּוֹן מִשְׁכַּן כְּבוֹדָךְ, וְעַל מַלְכוּת בֵּית דָּוִד מְשִׁיחָךְ. אֱלֹהֵינוּ, אָבִינוּ, רְעֵנוּ, זוּנֵנוּ, פַּרְנְסֵנוּ וְכַלְכְּלֵנוּ וְהַרְוִיחֵנוּ, וְהַרְוַח לָנוּ מְהֵרָה מִכׇּל צָרוֹתֵינוּ. וּבְנֵה יְרוּשָׁלַיִם עִיר הַקֹּדֶשׁ בִּמְהֵרָה בְיָמֵינוּ. בָּרוּךְ אַתָּה יְהֹוָה, בּוֹנֶה בְרַחֲמָיו יְרוּשָׁלָיִם, אָמֵן.
+בָּרוּךְ אַתָּה יְהֹוָה אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, הַזָּן אֶת הָעוֹלָם כֻּלּוֹ בְּטוּבוֹ בְּחֵן בְּחֶסֶד וּבְרַחֲמִים. הוּא נוֹתֵן לֶחֶם לְכׇל בָּשָׂר כִּי לְעוֹלָם חַסְדּוֹ. וּבְטוּבוֹ הַגָּדוֹל תָּמִיד לֹא חָסַר לָנוּ, וְאַל יֶחְסַר לָנוּ מָזוֹן לְעוֹלָם וָעֶד. בַּעֲבוּר שְׁמוֹ הַגָּדוֹל, כִּי הוּא אֵל זָן וּמְפַרְנֵס לַכֹּל וּמֵטִיב לַכֹּל, וּמֵכִין מָזוֹן לְכׇל בְּרִיּוֹתָיו אֲשֶׁר בָּרָא. בָּרוּךְ אַתָּה יְהֹוָה, הַזָּן אֶת הַכֹּל.
 
-בָּרוּךְ אַתָּה יְהֹוָה אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, הָאֵל אָבִינוּ מַלְכֵּנוּ אַדִּירֵנוּ בּוֹרְאֵנוּ גוֹאֲלֵנוּ קְדוֹשֵׁנוּ, הוּא הֵיטִיב הוּא מֵיטִיב הוּא יֵיטִיב לָנוּ. הָרַחֲמָן הוּא יְבָרֵךְ אֶת כֻּלָּנוּ יַחַד בְּרָכָה שְׁלֵמָה. בָּרוּךְ אַתָּה יְהֹוָה עוֹשֶׂה הַשָּׁלוֹם.`,
-    phonetique: `Shir Hamaalot, béshouv Adonaï et shivat Tsion hayinou kéh'olmim... (Chabbat et fêtes)
+נוֹדֶה לְּךָ יְהֹוָה אֱלֹהֵינוּ, עַל שֶׁהִנְחַלְתָּ לַאֲבוֹתֵינוּ אֶרֶץ חֶמְדָּה טוֹבָה וּרְחָבָה, וְעַל שֶׁהוֹצֵאתָנוּ יְהֹוָה אֱלֹהֵינוּ מֵאֶרֶץ מִצְרַיִם וּפְדִיתָנוּ מִבֵּית עֲבָדִים, וְעַל בְּרִיתְךָ שֶׁחָתַמְתָּ בִּבְשָׂרֵנוּ, וְעַל תּוֹרָתְךָ שֶׁלִּמַּדְתָּנוּ, וְעַל חֻקֶּיךָ שֶׁהוֹדַעְתָּנוּ, וְעַל חַיִּים חֵן וָחֶסֶד שֶׁחוֹנַנְתָּנוּ, וְעַל אֲכִילַת מָזוֹן שָׁאַתָּה זָן וּמְפַרְנֵס אוֹתָנוּ תָּמִיד, בְּכׇל יוֹם וּבְכׇל עֵת וּבְכׇל שָׁעָה. וְעַל הַכֹּל יְהֹוָה אֱלֹהֵינוּ אֲנַחְנוּ מוֹדִים לָךְ וּמְבָרְכִים אֶת שְׁמָךְ, כָּאָמוּר: וְאָכַלְתָּ וְשָׂבָעְתָּ, וּבֵרַכְתָּ אֶת יְהֹוָה אֱלֹהֶיךָ עַל הָאָרֶץ הַטֹּבָה אֲשֶׁר נָתַן לָךְ. בָּרוּךְ אַתָּה יְהֹוָה, עַל הָאָרֶץ וְעַל הַמָּזוֹן.
 
-Baroukh Ata Adonaï Élohénou mélékh haolam, hazan et haolam koulo bétouvo béh'en béh'éssed ouvérah'amim, hou noten lèh'em lekhol bassar ki léolam h'asdo. Ouvétouvo hagadol tamid lo h'assar lanou véal yéh'sar lanou mazon léolam vaèd. Baroukh Ata Adonaï, hazan et hakol.
+רַחֵם יְהֹוָה אֱלֹהֵינוּ עָלֵינוּ וְעַל יִשְׂרָאֵל עַמָּךְ, וְעַל יְרוּשָׁלַיִם עִירָךְ, וְעַל הַר צִיּוֹן מִשְׁכַּן כְּבוֹדָךְ, וְעַל הֵיכָלָךְ וְעַל מְעוֹנָךְ וְעַל דְּבִירָךְ, וְעַל הַבַּיִת הַגָּדוֹל וְהַקָּדוֹשׁ שֶׁנִּקְרָא שִׁמְךָ עָלָיו. אָבִינוּ, רְעֵנוּ זוּנֵנוּ פַּרְנְסֵנוּ וְכַלְכְּלֵנוּ וְהַרְוִיחֵנוּ, וְהַרְוַח לָנוּ יְהֹוָה אֱלֹהֵינוּ מְהֵרָה מִכׇּל צָרוֹתֵינוּ. וְנָא אַל תַּצְרִיכֵנוּ יְהֹוָה אֱלֹהֵינוּ, לֹא לִידֵי מַתְּנַת בָּשָׂר וָדָם וְלֹא לִידֵי הַלְוָאָתָם, כִּי אִם לְיָדְךָ הַמְּלֵאָה הַפְּתוּחָה הַקְּדוֹשָׁה וְהָרְחָבָה, שֶׁלֹּא נֵבוֹשׁ וְלֹא נִכָּלֵם לְעוֹלָם וָעֶד.
 
-Nodé lékha Adonaï Élohénou al shéhinh'alta laavotenou éretz h'emda tova our'h'ava, véal shéhotsétanou méérets mitsraïm oufditanou mibet avadim, véal britkha shéh'atamta bivssarénou, véal toratkha shélimadtanou. Al hakol Adonaï Élohénou anah'nou modim lakh oumévarkhim et shémakh. Baroukh Ata Adonaï, al haaretz véal hamazon.
+(בשבת:) רְצֵה וְהַחֲלִיצֵנוּ יְהֹוָה אֱלֹהֵינוּ בְּמִצְוֹתֶיךָ וּבְמִצְוַת יוֹם הַשְּׁבִיעִי, הַשַּׁבָּת הַגָּדוֹל וְהַקָּדוֹשׁ הַזֶּה, כִּי יוֹם זֶה גָּדוֹל וְקָדוֹשׁ הוּא לְפָנֶיךָ, לִשְׁבׇּת בּוֹ וְלָנוּחַ בּוֹ בְּאַהֲבָה כְּמִצְוַת רְצוֹנָךְ.
 
-Rah'em Adonaï Élohénou alénou véal Israël amakh, véal Yéroushalaïm irakh, véal Tsion mishkan kévodakh, véal malkhout bet David méshih'akh. Élohénou, avinou, ré'enou, zounénou, parnéssénou vékhalkélénou véharvih'énou, véharvah' lanou méhéra mikol tsarotenou. Ouvné Yéroushalaïm ir hakodesh bimhéra véyaménou. Baroukh Ata Adonaï, boné bérah'amav Yéroushalaïm, amen.
+מַלְכוּת בֵּית דָּוִד מְשִׁיחָךְ תַּחֲזִירֶנָּה לִמְקוֹמָהּ בִּמְהֵרָה בְיָמֵינוּ, וּבְנֵה יְרוּשָׁלַיִם עִיר הַקֹּדֶשׁ בִּמְהֵרָה בְיָמֵינוּ. בָּרוּךְ אַתָּה יְהֹוָה, בּוֹנֵה בְרַחֲמָיו יְרוּשָׁלָיִם, אָמֵן.
 
-Baroukh Ata Adonaï Élohénou mélékh haolam, haEl avinou malkénou adirénou borénou goalénou kédoshénou, hou hetiv hou meitiv hou yetiv lanou. Harah'aman hou yévarekh et koulanou yah'ad berakha shéléma. Baroukh Ata Adonaï osséh hashalom.`,
-    francais: `(Chant des montées, en Chabbat et fêtes)
+בָּרוּךְ אַתָּה יְהֹוָה אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, הָאֵל אָבִינוּ מַלְכֵּנוּ אַדִּירֵנוּ בּוֹרְאֵנוּ גוֹאֲלֵנוּ יוֹצְרֵנוּ קְדוֹשֵׁנוּ קְדוֹשׁ יַעֲקֹב, רוֹעֵנוּ רוֹעֵה יִשְׂרָאֵל, הַמֶּלֶךְ הַטּוֹב וְהַמֵּטִיב לַכֹּל, שֶׁבְּכׇל יוֹם וָיוֹם הוּא הֵיטִיב הוּא מֵיטִיב הוּא יֵיטִיב לָנוּ, הוּא גְמָלָנוּ הוּא גוֹמְלֵנוּ הוּא יִגְמְלֵנוּ לָעַד, לְחֵן וּלְחֶסֶד וּלְרַחֲמִים, וּלְרֵוַח הַצָּלָה וְהַצְלָחָה, בְּרָכָה וִישׁוּעָה נֶחָמָה, פַּרְנָסָה וְכַלְכָּלָה, וְרַחֲמִים וְחַיִּים וְשָׁלוֹם וְכׇל טוֹב, וּמִכׇּל טוּב לְעוֹלָם אַל יְחַסְּרֵנוּ.
 
-1ère bénédiction — Hazan : Béni sois-Tu, Éternel notre Dieu, Roi du monde, qui nourris le monde entier avec bonté, grâce et miséricorde ; Tu donnes le pain à toute chair, car Ta bonté est éternelle. Grâce à Ta grande bonté, jamais nous n'avons manqué de nourriture ; puisse-t-il en être toujours ainsi.
+הָרַחֲמָן הוּא יִשְׁתַּבַּח שְׁמוֹ לָעַד וָעֵד.
+הָרַחֲמָן הוּא יִתְבָּרַךְ בַּשָּׁמַיִם וּבָאָרֶץ.
+הָרַחֲמָן הוּא יְבָרֵךְ אֶת כֻּלָּנוּ יַחַד, בְּרָכָה שְׁלֵמָה, בְּמוֹ שֶׁנִּתְבָּרְכוּ אֲבוֹתֵינוּ אַבְרָהָם יִצְחָק וְיַעֲקֹב בַּכֹּל, מִכֹּל, כֹּל, כֵּן יְבָרֵךְ אוֹתָנוּ כֻּלָּנוּ יַחַד בְּרָכָה שְׁלֵמָה, וְכֵן תְּהִי בְּרָכָה, וְנֹאמַר אָמֵן.
 
-2ème bénédiction — Sur la terre : Nous Te remercions, Éternel notre Dieu, de nous avoir donné en héritage une terre désirable, et de nous avoir fait sortir d'Égypte, et pour Ton alliance et Ta Torah.
+(ברכת האורח, אם נמצא בבית מארח:)
+הָרַחֲמָן הוּא יְבָרֵךְ אֶת הַשֻּׁלְחָן הַזֶּה שֶׁאָכַלְנוּ עָלָיו, וִיסַדֵּר בּוֹ כׇּל מַעֲדַנֵּי עוֹלָם, וְיִהְיֶה כְשֻׁלְחָנוֹ שֶׁל אַבְרָהָם אָבִינוּ עָלָיו הַשָּׁלוֹם. כׇּל רָעֵב מִמֶּנּוּ יֹאכַל, וְכׇל צָמֵא מִמֶּנּוּ יִשְׁתֶּה, וְאַל יֶחְסַר מִמֶּנּוּ כׇּל טוֹב לָעַד וּלְעוֹלְמֵי עוֹלָמִים, אָמֵן. הָרַחֲמָן הוּא יְבָרֵךְ אֶת בַּעַל הַבַּיִת הַזֶּה וּבַעַל הַסְּעֻדָּה הַזֹּאת, הוּא וּבָנָיו וְאִשְׁתּוֹ וְכׇל אֲשֶׁר לוֹ, בְּבָנִים שֶׁיִּחְיוּ וּבִנְכָסִים שֶׁיִּרְבּוּ.
 
-3ème bénédiction — Reconstruction de Jérusalem : Aie pitié, Éternel notre Dieu, de nous, d'Israël Ton peuple, et de Jérusalem. Nourris-nous, soutiens-nous, et reconstruis Jérusalem rapidement de nos jours. Béni sois-Tu, qui rebâtis Jérusalem dans Ta miséricorde, Amen.
+הָרַחֲמָן הוּא יְבָרֵךְ אוֹתִי (וְאֶת אִשְׁתִּי וְאֶת זַרְעִי וְאֶת כׇּל אֲשֶׁר לִי), כְּמוֹ שֶׁנִּתְבָּרְכוּ אֲבוֹתֵינוּ אַבְרָהָם יִצְחָק וְיַעֲקֹב בַּכֹּל מִכֹּל כֹּל, כֵּן יְבָרֵךְ אוֹתָנוּ כֻּלָּנוּ יַחַד בְּרָכָה שְׁלֵמָה, וְנֹאמַר אָמֵן.
 
-4ème bénédiction — Hatov : Béni sois-Tu, Dieu, notre Père, notre Roi, notre Créateur, notre Sauveur, notre Saint ; Il nous a fait du bien, Il nous fait du bien, Il continuera à nous faire du bien. Que le Miséricordieux nous bénisse tous ensemble d'une bénédiction complète. Béni sois-Tu, Éternel, qui fais la paix.
+בַּמָּרוֹם יְלַמְּדוּ עֲלֵיהֶם וְעָלֵינוּ זְכוּת, שֶׁתְּהֵא לְמִשְׁמֶרֶת שָׁלוֹם. וְנִשָּׂא בְרָכָה מֵאֵת יְהֹוָה, וּצְדָקָה מֵאֱלֹהֵי יִשְׁעֵנוּ, וְנִמְצָא חֵן וְשֵׂכֶל טוֹב בְּעֵינֵי אֱלֹהִים וְאָדָם.
 
-(Suivi de nombreuses bénédictions additionnelles pour la maison, les convives, Jérusalem et la paix.)`,
+(בשבת:) הָרַחֲמָן הוּא יַנְחִילֵנוּ יוֹם שֶׁכֻּלּוֹ שַׁבָּת וּמְנוּחָה לְחַיֵּי הָעוֹלָמִים.
+
+הָרַחֲמָן הוּא יְזַכֵּנוּ לִימוֹת הַמָּשִׁיחַ וּלְחַיֵּי הָעוֹלָם הַבָּא. מִגְדּוֹל יְשׁוּעוֹת מַלְכּוֹ, וְעֹשֶׂה חֶסֶד לִמְשִׁיחוֹ לְדָוִד וּלְזַרְעוֹ עַד עוֹלָם. עֹשֶׂה שָׁלוֹם בִּמְרוֹמָיו, הוּא יַעֲשֶׂה שָׁלוֹם עָלֵינוּ וְעַל כׇּל יִשְׂרָאֵל, וְאִמְרוּ אָמֵן.
+
+יְראוּ אֶת יְהֹוָה קְדֹשָׁיו, כִּי אֵין מַחְסוֹר לִירֵאָיו. כְּפִירִים רָשׁוּ וְרָעֵבוּ, וְדֹרְשֵׁי יְהֹוָה לֹא יַחְסְרוּ כׇל טוֹב. הוֹדוּ לַיהֹוָה כִּי טוֹב, כִּי לְעוֹלָם חַסְדּוֹ. פּוֹתֵחַ אֶת יָדֶךָ, וּמַשְׂבִּיעַ לְכׇל חַי רָצוֹן. בָּרוּךְ הַגֶּבֶר אֲשֶׁר יִבְטַח בַּיהֹוָה, וְהָיָה יְהֹוָה מִבְטַחוֹ. נַעַר הָיִיתִי גַּם זָקַנְתִּי, וְלֹא רָאִיתִי צַדִּיק נֶעֱזָב, וְזַרְעוֹ מְבַקֶּשׁ לֶחֶם. יְהֹוָה עֹז לְעַמּוֹ יִתֵּן, יְהֹוָה יְבָרֵךְ אֶת עַמּוֹ בַשָּׁלוֹם.`,
+    phonetique: `(Chabbat et fêtes:) Shir Hamaalot, béshouv Adonaï et shivat Tsion hayinou kéh'olmim. Az yimalé sehok pinou ouleshonenou rina, az yomrou vagoyim higdil Adonaï laassot im éle. Higdil Adonaï laassot imanou hayinou semehim. Shouva Adonaï et shevitenou kaafikim banéguev. Hazorim bedima berina yiktsorou. Halokh yelekh ouvakho nosse mèshèkh hazara, bo yavo berina nosse aloumotav.
+
+(En semaine:) Al naharot Bavel sham yashavnou gam bakhinou bezokhrenou et Tsion...
+
+(Zimoun à trois ou plus:)
+Le meneur : Rabotaï nevarekh.
+Les convives : Yehi shem Adonaï mevorakh méata véad olam.
+Le meneur : Birshout maranan verabanan verabotaï, nevarekh (Élohénou) shéakhalnou mishélo.
+Les convives : Baroukh (Élohénou) shéakhalnou mishélo ouvtouvo hayinou.
+Le meneur : Baroukh (Élohénou) shéakhalnou mishélo ouvtouvo hagadol tamid hayinou.
+
+Baroukh Ata Adonaï Élohénou mélékh haolam, hazan et haolam koulo bétouvo béh'en béh'éssed ouvérah'amim. Hou noten lèh'em lekhol bassar ki léolam h'asdo. Ouvétouvo hagadol tamid lo h'assar lanou, véal yéh'sar lanou mazon léolam vaèd. Baavour shémo hagadol, ki Hou El zan oumfarnés lakol ouméitiv lakol, oumékhin mazon lekhol beriotav asher bara. Baroukh Ata Adonaï, hazan et hakol.
+
+Nodé lékha Adonaï Élohénou, al shéhinh'alta laavotenou éretz h'emda tova our'h'ava, véal shéhotsétanou Adonaï Élohénou méérets mitsraïm oufditanou mibet avadim, véal britkha shéh'atamta bivssarénou, véal toratkha shélimadtanou, véal h'oukékha shéhodatanou, véal h'ayim h'en vah'éssed shéh'onantanou, véal akhilat mazon shaata zan oumfarnés otanou tamid, bekhol yom oubkhol et oubkhol shaa. Véal hakol Adonaï Élohénou anah'nou modim lakh oumévarkhim et shémakh. Baroukh Ata Adonaï, al haaretz véal hamazon.
+
+Rah'em Adonaï Élohénou alénou véal Israël amakh, véal Yéroushalaïm irakh, véal Har Tsion mishkan kévodakh, véal hékhalakh véal méonakh véal devirakh, véal habayit hagadol vehakadosh shénikra shimkha alav. Avinou, ré'enou zounénou parnéssénou vékhalkélénou véharvih'énou, véharvah' lanou Adonaï Élohénou méhéra mikol tsarotenou.
+
+Malkhout bet David méshih'akh tah'azirena limkomah bimhéra véyaménou, ouvné Yéroushalaïm ir hakodesh bimhéra véyaménou. Baroukh Ata Adonaï, boné bérah'amav Yéroushalaïm, amen.
+
+Baroukh Ata Adonaï Élohénou mélékh haolam, haEl avinou malkénou adirénou borénou goalénou yotsrénou kédoshénou kédosh Yaakov, roénou roé Israël, hamélèkh hatov véhamétiv lakol, shébékhol yom vayom hou hetiv hou meitiv hou yetiv lanou.
+
+Harah'aman hou yishtabah' shémo laad vaèd.
+Harah'aman hou yitbarakh bashamayim ouvaaretz.
+Harah'aman hou yévarekh et koulanou yah'ad, berakha shéléma, kemo shenitbarkhou avotenou Avraham Yits'hak véYaakov bakol mikol kol, ken yévarekh otanou koulanou yah'ad berakha shéléma, véken téhi berakha, vénomar amen.
+
+Harah'aman hou yévarekh et hashoulh'an haze sheakhalnou alav...
+
+Yiréou et Adonaï kedoshav, ki en mah'ssor liréav. Kefirim rashou veraévou, vedorshé Adonaï lo yah'sserou khol tov. Hodou laAdonaï ki tov, ki léolam h'asdo. Potéah' et yadékha, oumassbia lékhol h'aï ratson. Baroukh hagéver asher yivtah' baAdonaï, véhaya Adonaï mivtah'o. Naar hayiti gam zakanti, vélo raïti tsadik néézav, vézaro mevakésh lèh'em. Adonaï oz léamo yiten, Adonaï yévarekh et amo vashalom.`,
+    francais: `(En Chabbat et fêtes : "Chant des montées" — Psaume 126, célébrant le retour de Sion.)
+(En semaine : "Sur les fleuves de Babylone" — Psaume 137, évoquant l'exil.)
+
+Zimoun (invitation à bénir, à trois convives ou plus) : Le meneur invite les convives à bénir ensemble Celui dont ils ont mangé la nourriture.
+
+1ère bénédiction — Hazan (Celui qui nourrit) : Béni sois-Tu, Éternel notre Dieu, Roi du monde, qui nourris le monde entier avec bonté, grâce et miséricorde. Tu donnes le pain à toute chair, car Ta bonté est éternelle. Grâce à Ta grande bonté, jamais nous n'avons manqué de nourriture, et puissions-nous n'en manquer jamais, car Tu es le Dieu qui nourrit et soutient tous, et fais le bien à tous. Béni sois-Tu, Éternel, qui nourris toute chair.
+
+2ème bénédiction — Sur la terre : Nous Te remercions, Éternel notre Dieu, de nous avoir donné en héritage à nos ancêtres une terre désirable, bonne et vaste, de nous avoir fait sortir d'Égypte et libérés de la maison d'esclavage, pour Ton alliance scellée dans notre chair, pour Ta Torah que Tu nous as enseignée, pour Tes statuts que Tu nous as fait connaître, et pour la vie, la grâce et la bonté dont Tu nous as comblés. Pour tout cela, Éternel notre Dieu, nous Te remercions et bénissons Ton Nom. Béni sois-Tu, Éternel, pour la terre et pour la nourriture.
+
+3ème bénédiction — Reconstruction de Jérusalem : Aie pitié, Éternel notre Dieu, de nous, d'Israël Ton peuple, de Jérusalem Ta ville, du mont Sion demeure de Ta gloire. Nourris-nous, soutiens-nous, et fais que nous n'ayons jamais à dépendre des dons ou des prêts d'autrui, mais seulement de Ta main généreuse. (En Chabbat : on ajoute une mention spéciale du repos du septième jour.) Reconstruis Jérusalem rapidement de nos jours. Béni sois-Tu, qui rebâtis Jérusalem dans Ta miséricorde, Amen.
+
+4ème bénédiction — HaTov véHaMétiv (Le Bon qui fait le bien) : Béni sois-Tu, Dieu, notre Père, notre Roi, notre Créateur, notre Sauveur, notre Saint, le Saint de Jacob, notre Berger, le Berger d'Israël ; chaque jour Il nous a fait du bien, nous fait du bien, et continuera à nous faire du bien à jamais.
+
+Les bénédictions du Rahaman (Miséricordieux) : Une longue série de souhaits introduits par "Que le Miséricordieux..." — qu'Il bénisse l'assemblée réunie, la table et son hôte, accorde la paix, le Chabbat éternel pour le monde futur, les temps messianiques, et conclut par "Que Celui qui fait la paix dans les hauteurs établisse la paix sur nous et sur tout Israël."
+
+Versets de clôture : "Craignez l'Éternel, vous Ses saints, car rien ne manque à ceux qui Le craignent... Le jeune lion a faim, mais ceux qui cherchent l'Éternel ne manquent d'aucun bien." Et le verset final : "L'Éternel donnera la force à Son peuple, l'Éternel bénira Son peuple par la paix."`,
   },
   {
     id: "kaddish",
     titre: "Kaddish",
+    titreHebreu: "קַדִּיש",
     sousTitre: "Sanctification du Nom (« Kaddish Yatom »)",
     icone: "🕊️",
     hebreu: `יִתְגַּדַּל וְיִתְקַדַּשׁ שְׁמֵהּ רַבָּא. בְּעָלְמָא דִּי בְרָא כִרְעוּתֵהּ, וְיַמְלִיךְ מַלְכוּתֵהּ, וְיַצְמַח פֻּרְקָנֵהּ וִיקָרֵב מְשִׁיחֵהּ. בְּחַיֵּיכוֹן וּבְיוֹמֵיכוֹן וּבְחַיֵּי דְכׇל בֵּית יִשְׂרָאֵל, בַּעֲגָלָא וּבִזְמַן קָרִיב וְאִמְרוּ אָמֵן.
@@ -155,23 +215,88 @@ Que Celui qui fait la paix dans les cieux établisse la paix sur nous et sur tou
   {
     id: "tikoun-haklali",
     titre: "Tikoun HaKlali",
+    titreHebreu: "תִּקּוּן הַכְּלָלִי",
     sousTitre: "Les 10 psaumes du Rabbi Nahman de Breslev",
     icone: "📖",
     hebreu: `הֲרֵינִי מְקַשֵּׁר עַצְמִי בַּאֲמִירַת הָעֲשָׂרָה מִזְמוֹרִים אֵלּוּ לְכׇל הַצַּדִּיקִים הָאֲמִתִּיִּים שֶׁבְּדוֹרֵנוּ, וּלְכׇל הַצַּדִּיקִים הָאֲמִתִּיִּים שׁוֹכְנֵי עָפָר, קְדוֹשִׁים אֲשֶׁר בָּאָרֶץ הֵמָּה, וּבִפְרָט לְרַבֵּנוּ הַקָּדוֹשׁ, צַדִּיק יְסוֹד עוֹלָם, נַחַל נוֹבֵעַ מְקוֹר חׇכְמָה, רַבֵּנוּ נַחְמָן בֶּן פֵיגֶא, זְכוּתוֹ יָגֵן עָלֵינוּ.
 
-לקריאת התיקון הכללי יש לומר את עשרה פרקי תהילים הבאים, לפי הסדר:
-פרק ט"ז · פרק ל"ב · פרק מ"א · פרק מ"ב · פרק נ"ט · פרק ע"ז · פרק צ' · פרק ק"ה · פרק קל"ז · פרק ק"נ.`,
+— תהילים פרק ט"ז —
+מִכְתָּם לְדָוִד, שׇמְרֵנִי אֵל כִּי חָסִיתִי בָךְ. אָמַרְתְּ לַיהֹוָה אֲדֹנָי אָתָּה, טוֹבָתִי בַּל עָלֶיךָ. לִקְדוֹשִׁים אֲשֶׁר בָּאָרֶץ הֵמָּה, וְאַדִּירֵי כׇּל חֶפְצִי בָם. יִרְבּוּ עַצְּבוֹתָם אַחֵר מָהָרוּ, בַּל אַסִּיךְ נִסְכֵּיהֶם מִדָּם, וּבַל אֶשָּׂא אֶת שְׁמוֹתָם עַל שְׂפָתָי. יְהֹוָה מְנָת חֶלְקִי וְכוֹסִי, אַתָּה תּוֹמִיךְ גּוֹרָלִי. חֲבָלִים נָפְלוּ לִי בַּנְּעִמִים, אַף נַחֲלָת שָׁפְרָה עָלָי. אֲבָרֵךְ אֶת יְהֹוָה אֲשֶׁר יְעָצָנִי, אַף לֵילוֹת יִסְּרוּנִי כִלְיוֹתָי. שִׁוִּיתִי יְהֹוָה לְנֶגְדִּי תָמִיד, כִּי מִימִינִי בַּל אֶמּוֹט. לָכֵן שָׁמַח לִבִּי וַיָּגֶל כְּבוֹדִי, אַף בְּשָׂרִי יִשְׁכֹּן לָבֶטַח. כִּי לֹא תַעֲזֹב נַפְשִׁי לִשְׁאוֹל, לֹא תִתֵּן חֲסִידְךָ לִרְאוֹת שָׁחַת. תּוֹדִיעֵנִי אֹרַח חַיִּים, שֹׂבַע שְׂמָחוֹת אֶת פָּנֶיךָ, נְעִמוֹת בִּימִינְךָ נֶצַח.
+
+— תהילים פרק ל"ב —
+לְדָוִד מַשְׂכִּיל, אַשְׁרֵי נְשׂוּי פֶּשַׁע כְּסוּי חֲטָאָה. אַשְׁרֵי אָדָם לֹא יַחְשֹׁב יְהֹוָה לוֹ עָוֹן, וְאֵין בְּרוּחוֹ רְמִיָּה. כִּי הֶחֱרַשְׁתִּי בָּלוּ עֲצָמָי, בְּשַׁאֲגָתִי כׇּל הַיּוֹם. כִּי יוֹמָם וָלַיְלָה תִּכְבַּד עָלַי יָדֶךָ, נֶהְפַּךְ לְשַׁדִּי בְּחַרְבֹנֵי קַיִץ סֶלָה. חַטָּאתִי אוֹדִיעֲךָ וַעֲוֹנִי לֹא כִסִּיתִי, אָמַרְתִּי אוֹדֶה עֲלֵי פְשָׁעַי לַיהֹוָה, וְאַתָּה נָשָׂאתָ עֲוֹן חַטָּאתִי סֶלָה. עַל זֹאת יִתְפַּלֵּל כׇּל חָסִיד אֵלֶיךָ לְעֵת מְצֹא, רַק לְשֵׁטֶף מַיִם רַבִּים אֵלָיו לֹא יַגִּיעוּ. אַתָּה סֵתֶר לִי, מִצַּר תִּצְּרֵנִי, רׇנֵּי פַלֵּט תְּסוֹבְבֵנִי סֶלָה. אַשְׂכִּילְךָ וְאוֹרְךָ בְּדֶרֶךְ זוּ תֵלֵךְ, אִיעֲצָה עָלֶיךָ עֵינִי. אַל תִּהְיוּ כְּסוּס כְּפֶרֶד אֵין הָבִין, בְּמֶתֶג וָרֶסֶן עֶדְיוֹ לִבְלוֹם, בַּל קְרֹב אֵלֶיךָ. רַבִּים מַכְאוֹבִים לָרָשָׁע, וְהַבּוֹטֵחַ בַּיהֹוָה חֶסֶד יְסוֹבְבֶנּוּ. שִׂמְחוּ בַיהֹוָה וְגִילוּ צַדִּיקִים, וְהַרְנִינוּ כׇּל יִשְׁרֵי לֵב.
+
+— תהילים פרק מ"א —
+לַמְנַצֵּחַ מִזְמוֹר לְדָוִד. אַשְׁרֵי מַשְׂכִּיל אֶל דָּל, בְּיוֹם רָעָה יְמַלְּטֵהוּ יְהֹוָה. יְהֹוָה יִשְׁמְרֵהוּ וִיחַיֵּהוּ וְאֻשַּׁר בָּאָרֶץ, וְאַל תִּתְּנֵהוּ בְּנֶפֶשׁ אֹיְבָיו. יְהֹוָה יִסְעָדֶנּוּ עַל עֶרֶשׂ דְּוָי, כׇּל מִשְׁכָּבוֹ הָפַכְתָּ בְחׇלְיוֹ. אֲנִי אָמַרְתִּי, יְהֹוָה חׇנֵּנִי, רְפָאָה נַפְשִׁי כִּי חָטָאתִי לָךְ. אוֹיְבַי יֹאמְרוּ רַע לִי, מָתַי יָמוּת וְאָבַד שְׁמוֹ. וְאִם בָּא לִרְאוֹת שָׁוְא יְדַבֵּר, לִבּוֹ יִקְבֹּץ אָוֶן לוֹ, יֵצֵא לַחוּץ יְדַבֵּר. יַחַד עָלַי יִתְלַחֲשׁוּ כׇּל שֹׂנְאָי, עָלַי יַחְשְׁבוּ רָעָה לִי. דְּבַר בְּלִיַּעַל יָצוּק בּוֹ, וַאֲשֶׁר שָׁכַב לֹא יוֹסִיף לָקוּם. גַּם אִישׁ שְׁלוֹמִי אֲשֶׁר בָּטַחְתִּי בוֹ אוֹכֵל לַחְמִי, הִגְדִּיל עָלַי עָקֵב. וְאַתָּה יְהֹוָה חׇנֵּנִי וַהֲקִימֵנִי, וַאֲשַׁלְּמָה לָהֶם. בְּזֹאת יָדַעְתִּי כִּי חָפַצְתָּ בִּי, כִּי לֹא יָרִיעַ אֹיְבִי עָלָי. וַאֲנִי בְּתֻמִּי תָּמַכְתָּ בִּי, וַתַּצִּיבֵנִי לְפָנֶיךָ לְעוֹלָם. בָּרוּךְ יְהֹוָה אֱלֹהֵי יִשְׂרָאֵל, מֵהָעוֹלָם וְעַד הָעוֹלָם אָמֵן וְאָמֵן.
+
+— תהילים פרק מ"ב —
+לַמְנַצֵּחַ מַשְׂכִּיל לִבְנֵי קֹרַח. כְּאַיָּל תַּעֲרֹג עַל אֲפִיקֵי מַיִם, כֵּן נַפְשִׁי תַעֲרֹג אֵלֶיךָ אֱלֹהִים. צָמְאָה נַפְשִׁי לֵאלֹהִים לְאֵל חָי, מָתַי אָבוֹא וְאֵרָאֶה פְּנֵי אֱלֹהִים. הָיְתָה לִי דִמְעָתִי לֶחֶם יוֹמָם וָלַיְלָה, בֶּאֱמֹר אֵלַי כׇּל הַיּוֹם אַיֵּה אֱלֹהֶיךָ. אֵלֶּה אֶזְכְּרָה וְאֶשְׁפְּכָה עָלַי נַפְשִׁי, כִּי אֶעֱבֹר בַּסָּךְ, אֶדַּדֵּם עַד בֵּית אֱלֹהִים בְּקוֹל רִנָּה וְתוֹדָה, הָמוֹן חוֹגֵג. מַה תִּשְׁתּוֹחֲחִי נַפְשִׁי וַתֶּהֱמִי עָלָי, הוֹחִילִי לֵאלֹהִים כִּי עוֹד אוֹדֶנּוּ יְשׁוּעוֹת פָּנָיו. אֱלֹהַי עָלַי נַפְשִׁי תִשְׁתּוֹחָח, עַל כֵּן אֶזְכׇּרְךָ מֵאֶרֶץ יַרְדֵּן וְחֶרְמוֹנִים מֵהַר מִצְעָר. תְּהוֹם אֶל תְּהוֹם קוֹרֵא לְקוֹל צִנּוֹרֶיךָ, כׇּל מִשְׁבָּרֶיךָ וְגַלֶּיךָ עָלַי עָבָרוּ. יוֹמָם יְצַוֶּה יְהֹוָה חַסְדּוֹ, וּבַלַּיְלָה שִׁירֹה עִמִּי, תְּפִלָּה לְאֵל חַיָּי. אוֹמְרָה לְאֵל סַלְעִי לָמָה שְׁכַחְתָּנִי, לָמָה קֹדֵר אֵלֵךְ בְּלַחַץ אוֹיֵב. בְּרֶצַח בְּעַצְמוֹתַי חֵרְפוּנִי צוֹרְרָי, בְּאׇמְרָם אֵלַי כׇּל הַיּוֹם אַיֵּה אֱלֹהֶיךָ. מַה תִּשְׁתּוֹחֲחִי נַפְשִׁי וּמַה תֶּהֱמִי עָלָי, הוֹחִילִי לֵאלֹהִים כִּי עוֹד אוֹדֶנּוּ יְשׁוּעֹת פָּנַי וֵאלֹהָי.
+
+— תהילים פרק נ"ט —
+לַמְנַצֵּחַ אַל תַּשְׁחֵת לְדָוִד מִכְתָּם, בִּשְׁלֹחׇ שָׁאוּל וַיִּשְׁמְרוּ אֶת הַבַּיִת לַהֲמִיתוֹ. הַצִּילֵנִי מֵאֹיְבַי אֱלֹהָי, מִמִּתְקוֹמְמַי תְּשַׂגְּבֵנִי. הַצִּילֵנִי מִפֹּעֲלֵי אָוֶן, וּמֵאַנְשֵׁי דָמִים הוֹשִׁיעֵנִי. כִּי הִנֵּה אָרְבוּ לְנַפְשִׁי, יָגוּרוּ עָלַי עַזִּים, לֹא פִשְׁעִי וְלֹא חַטָּאתִי יְהֹוָה. בְּלִי עָוֹן יְרוּצוּן וְיִכּוֹנָנוּ, עוּרָה לִקְרָאתִי וּרְאֵה. וְאַתָּה יְהֹוָה אֱלֹהִים צְבָאוֹת אֱלֹהֵי יִשְׂרָאֵל, הָקִיצָה לִפְקֹד כׇּל הַגּוֹיִם, אַל תָּחֹן כׇּל בֹּגְדֵי אָוֶן סֶלָה. יָשׁוּבוּ לָעֶרֶב יֶהֱמוּ כַכָּלֵב, וִיסוֹבְבוּ עִיר. הִנֵּה יַבִּיעוּן בְּפִיהֶם חֲרָבוֹת בְּשִׂפְתוֹתֵיהֶם, כִּי מִי שֹׁמֵעַ. וְאַתָּה יְהֹוָה תִּשְׂחַק לָמוֹ, תִּלְעַג לְכׇל גּוֹיִם. עֻזּוֹ אֵלֶיךָ אֶשְׁמֹרָה, כִּי אֱלֹהִים מִשְׂגַּבִּי. אֱלֹהֵי חַסְדִּי יְקַדְּמֵנִי, אֱלֹהִים יַרְאֵנִי בְשֹׁרְרָי. אַל תַּהַרְגֵם פֶּן יִשְׁכְּחוּ עַמִּי, הֲנִיעֵמוֹ בְחֵילְךָ וְהוֹרִידֵמוֹ מָגִנֵּנוּ אֲדֹנָי. חַטַּאת פִּימוֹ דְּבַר שְׂפָתֵימוֹ, וְיִלָּכְדוּ בִגְאוֹנָם, וּמֵאָלָה וּמִכַּחַשׁ יְסַפֵּרוּ. כַּלֵּה בְחֵמָה כַּלֵּה וְאֵינֵמוֹ, וְיֵדְעוּ כִּי אֱלֹהִים מֹשֵׁל בְּיַעֲקֹב לְאַפְסֵי הָאָרֶץ סֶלָה. וְיָשֻׁבוּ לָעֶרֶב יֶהֱמוּ כַכָּלֵב, וִיסוֹבְבוּ עִיר. הֵמָּה יְנִיעוּן לֶאֱכֹל, אִם לֹא יִשְׂבְּעוּ וַיָּלִינוּ. וַאֲנִי אָשִׁיר עֻזֶּךָ, וַאֲרַנֵּן לַבֹּקֶר חַסְדֶּךָ, כִּי הָיִיתָ מִשְׂגָּב לִי וּמָנוֹס בְּיוֹם צַר לִי. עֻזִּי אֵלֶיךָ אֲזַמֵּרָה, כִּי אֱלֹהִים מִשְׂגַּבִּי אֱלֹהֵי חַסְדִּי.
+
+— תהילים פרק ע"ז —
+לַמְנַצֵּחַ עַל יְדוּתוּן לְאָסָף מִזְמוֹר. קוֹלִי אֶל אֱלֹהִים וְאֶצְעָקָה, קוֹלִי אֶל אֱלֹהִים וְהַאֲזִין אֵלָי. בְּיוֹם צָרָתִי אֲדֹנָי דָּרָשְׁתִּי, יָדִי לַיְלָה נִגְּרָה וְלֹא תָפוּג, מֵאֲנָה הִנָּחֵם נַפְשִׁי. אֶזְכְּרָה אֱלֹהִים וְאֶהֱמָיָה, אָשִׂיחָה וְתִתְעַטֵּף רוּחִי סֶלָה. אָחַזְתָּ שְׁמֻרוֹת עֵינָי, נִפְעַמְתִּי וְלֹא אֲדַבֵּר. חִשַּׁבְתִּי יָמִים מִקֶּדֶם, שְׁנוֹת עוֹלָמִים. אֶזְכְּרָה נְגִינָתִי בַּלַּיְלָה, עִם לְבָבִי אָשִׂיחָה, וַיְחַפֵּשׂ רוּחִי. הַלְעוֹלָמִים יִזְנַח אֲדֹנָי, וְלֹא יֹסִיף לִרְצוֹת עוֹד. הֶאָפֵס לָנֶצַח חַסְדּוֹ, גָּמַר אֹמֶר לְדֹר וָדֹר. הֲשָׁכַח חַנּוֹת אֵל, אִם קָפַץ בְּאַף רַחֲמָיו סֶלָה. וָאֹמַר חַלּוֹתִי הִיא, שְׁנוֹת יְמִין עֶלְיוֹן. אֶזְכּוֹר מַעַלְלֵי יָהּ, כִּי אֶזְכְּרָה מִקֶּדֶם פִּלְאֶךָ. וְהָגִיתִי בְכׇל פׇּעֳלֶךָ, וּבַעֲלִילוֹתֶיךָ אָשִׂיחָה. אֱלֹהִים בַּקֹּדֶשׁ דַּרְכֶּךָ, מִי אֵל גָּדוֹל כֵּאלֹהִים. אַתָּה הָאֵל עֹשֵׂה פֶלֶא, הוֹדַעְתָּ בָעַמִּים עֻזֶּךָ. גָּאַלְתָּ בִּזְרוֹעַ עַמֶּךָ, בְּנֵי יַעֲקֹב וְיוֹסֵף סֶלָה. רָאוּךָ מַּיִם אֱלֹהִים רָאוּךָ מַּיִם יָחִילוּ, אַף יִרְגְּזוּ תְהֹמוֹת. זֹרְמוּ מַיִם עָבוֹת, קוֹל נָתְנוּ שְׁחׇקִים, אַף חֲצָצֶיךָ יִתְהַלָּכוּ. קוֹל רַעַמְךָ בַּגַּלְגַּל, הֵאִירוּ בְרָקִים תֵּבֵל, רָגְזָה וַתִּרְעַשׁ הָאָרֶץ. בַּיָּם דַּרְכֶּךָ וּשְׁבִילְךָ בְּמַיִם רַבִּים, וְעִקְּבוֹתֶיךָ לֹא נֹדָעוּ. נָחִיתָ כַצֹּאן עַמֶּךָ, בְּיַד מֹשֶׁה וְאַהֲרֹן.
+
+— תהילים פרק צ' —
+תְּפִלָּה לְמֹשֶׁה אִישׁ הָאֱלֹהִים. אֲדֹנָי מָעוֹן אַתָּה הָיִיתָ לָּנוּ בְּדֹר וָדֹר. בְּטֶרֶם הָרִים יֻלָּדוּ, וַתְּחוֹלֵל אֶרֶץ וְתֵבֵל, וּמֵעוֹלָם עַד עוֹלָם אַתָּה אֵל. תָּשֵׁב אֱנוֹשׁ עַד דַּכָּא, וַתֹּאמֶר שׁוּבוּ בְנֵי אָדָם. כִּי אֶלֶף שָׁנִים בְּעֵינֶיךָ כְּיוֹם אֶתְמוֹל כִּי יַעֲבֹר, וְאַשְׁמוּרָה בַלָּיְלָה. זְרַמְתָּם שֵׁנָה יִהְיוּ, בַּבֹּקֶר כֶּחָצִיר יַחֲלֹף. בַּבֹּקֶר יָצִיץ וְחָלָף, לָעֶרֶב יְמוֹלֵל וְיָבֵש. כִּי כָלִינוּ בְאַפֶּךָ, וּבַחֲמָתְךָ נִבְהָלְנוּ. שַׁתָּה עֲוֹנֹתֵינוּ לְנֶגְדֶּךָ, עֲלֻמֵנוּ לִמְאוֹר פָּנֶיךָ. כִּי כׇל יָמֵינוּ פָּנוּ בְעֶבְרָתֶךָ, כִּלִּינוּ שְׁנֵינוּ כְמוֹ הֶגֶה. יְמֵי שְׁנוֹתֵינוּ בָּהֶם שִׁבְעִים שָׁנָה, וְאִם בִּגְבוּרֹת שְׁמוֹנִים שָׁנָה, וְרׇהְבָּם עָמָל וָאָוֶן, כִּי גָז חִישׁ וַנָּעֻפָה. מִי יוֹדֵעַ עֹז אַפֶּךָ, וּכְיִרְאָתְךָ עֶבְרָתֶךָ. לִמְנוֹת יָמֵינוּ כֵּן הוֹדַע, וְנָבִא לְבַב חׇכְמָה. שׁוּבָה יְהֹוָה עַד מָתַי, וְהִנָּחֵם עַל עֲבָדֶיךָ. שַׁבְּעֵנוּ בַבֹּקֶר חַסְדֶּךָ, וּנְרַנְּנָה וְנִשְׂמְחָה בְּכׇל יָמֵינוּ. שַׁמְּחֵנוּ כִּימוֹת עִנִּיתָנוּ, שְׁנוֹת רָאִינוּ רָעָה. יֵרָאֶה אֶל עֲבָדֶיךָ פׇעֳלֶךָ, וַהֲדָרְךָ עַל בְּנֵיהֶם. וִיהִי נֹעַם אֲדֹנָי אֱלֹהֵינוּ עָלֵינוּ, וּמַעֲשֵׂה יָדֵינוּ כּוֹנְנָה עָלֵינוּ, וּמַעֲשֵׂה יָדֵינוּ כּוֹנְנֵהוּ.
+
+— תהילים פרק ק"ה —
+הוֹדוּ לַיהֹוָה קִרְאוּ בִשְׁמוֹ, הוֹדִיעוּ בָעַמִּים עֲלִילוֹתָיו. שִׁירוּ לוֹ זַמְּרוּ לוֹ, שִׂיחוּ בְּכׇל נִפְלְאוֹתָיו. הִתְהַלְלוּ בְּשֵׁם קָדְשׁוֹ, יִשְׂמַח לֵב מְבַקְשֵׁי יְהֹוָה. דִּרְשׁוּ יְהֹוָה וְעֻזּוֹ, בַּקְּשׁוּ פָנָיו תָּמִיד. זִכְרוּ נִפְלְאוֹתָיו אֲשֶׁר עָשָׂה, מֹפְתָיו וּמִשְׁפְּטֵי פִיו. זֶרַע אַבְרָהָם עַבְדּוֹ, בְּנֵי יַעֲקֹב בְּחִירָיו. הוּא יְהֹוָה אֱלֹהֵינוּ, בְּכׇל הָאָרֶץ מִשְׁפָּטָיו. זָכַר לְעוֹלָם בְּרִיתוֹ, דָּבָר צִוָּה לְאֶלֶף דּוֹר. אֲשֶׁר כָּרַת אֶת אַבְרָהָם, וּשְׁבוּעָתוֹ לְיִצְחָק. וַיַּעֲמִידֶהָ לְיַעֲקֹב לְחֹק, לְיִשְׂרָאֵל בְּרִית עוֹלָם. לֵאמֹר לְךָ אֶתֵּן אֶת אֶרֶץ כְּנָעַן, חֶבֶל נַחֲלַתְכֶם. (...) שָׁלַח לִפְנֵיהֶם אִישׁ, לְעֶבֶד נִמְכַּר יוֹסֵף. עִנּוּ בַכֶּבֶל רַגְלוֹ, בַּרְזֶל בָּאָה נַפְשׁוֹ. עַד עֵת בֹּא דְבָרוֹ, אִמְרַת יְהֹוָה צְרָפָתְהוּ. שָׁלַח מֶלֶךְ וַיַּתִּירֵהוּ, מֹשֵׁל עַמִּים וַיְפַתְּחֵהוּ. שָׂמוֹ אָדוֹן לְבֵיתוֹ, וּמֹשֵׁל בְּכׇל קִנְיָנוֹ. (...) וַיֹּצִיאֵם בְּכֶסֶף וְזָהָב, וְאֵין בִּשְׁבָטָיו כּוֹשֵׁל. (...) בַּעֲבוּר יִשְׁמְרוּ חֻקָּיו, וְתוֹרֹתָיו יִנְצֹרוּ, הַלְלוּיָה.
+
+— תהילים פרק קל"ז —
+עַל נַהֲרוֹת בָּבֶל שָׁם יָשַׁבְנוּ, גַּם בָּכִינוּ בְּזׇכְרֵנוּ אֶת צִיּוֹן. עַל עֲרָבִים בְּתוֹכָהּ, תָּלִינוּ כִּנֹּרוֹתֵינוּ. כִּי שָׁם שְׁאֵלוּנוּ שׁוֹבֵינוּ דִּבְרֵי שִׁיר, וְתוֹלָלֵינוּ שִׂמְחָה, שִׁירוּ לָנוּ מִשִּׁיר צִיּוֹן. אֵיךְ נָשִׁיר אֶת שִׁיר יְהֹוָה, עַל אַדְמַת נֵכָר. אִם אֶשְׁכׇּחֵךְ יְרוּשָׁלַיִם, תִּשְׁכַּח יְמִינִי. תִּדְבַּק לְשׁוֹנִי לְחִכִּי אִם לֹא אֶזְכְּרֵכִי, אִם לֹא אַעֲלֶה אֶת יְרוּשָׁלַיִם עַל רֹאשׁ שִׂמְחָתִי. זְכֹר יְהֹוָה לִבְנֵי אֱדוֹם, אֵת יוֹם יְרוּשָׁלַיִם, הָאֹמְרִים עָרוּ עָרוּ עַד הַיְסוֹד בָּהּ.
+
+— תהילים פרק ק"נ —
+הַלְלוּיָהּ, הַלְלוּ אֵל בְּקׇדְשׁוֹ, הַלְלוּהוּ בִּרְקִיעַ עֻזּוֹ. הַלְלוּהוּ בִגְבוּרֹתָיו, הַלְלוּהוּ כְּרֹב גֻּדְלוֹ. הַלְלוּהוּ בְּתֵקַע שׁוֹפָר, הַלְלוּהוּ בְּנֵבֶל וְכִנּוֹר. הַלְלוּהוּ בְּתֹף וּמָחוֹל, הַלְלוּהוּ בְּמִנִּים וְעֻגָב. הַלְלוּהוּ בְּצִלְצְלֵי שָׁמַע, הַלְלוּהוּ בְּצִלְצְלֵי תְרוּעָה. כֹּל הַנְּשָׁמָה תְּהַלֵּל יָהּ, הַלְלוּיָהּ.
+
+מִי יִתֵּן מִצִּיּוֹן יְשׁוּעַת יִשְׂרָאֵל, בְּשׁוּב יְהֹוָה שְׁבוּת עַמּוֹ, יָגֵל יַעֲקֹב יִשְׂמַח יִשְׂרָאֵל. וּתְשׁוּעַת צַדִּיקִים מֵיהֹוָה, מָעוּזָּם בְּעֵת צָרָה. וַיַּעְזְרֵם יְהֹוָה וַיְפַלְּטֵם, יְפַלְּטֵם מֵרְשָׁעִים וְיוֹשִיעֵם כִּי חָסוּ בוֹ.`,
     phonetique: `Haréini mékashér atsmi baamirat haassara mizmorim élou lékhol hatsadikim haamitiyim shébédorenou, oulkhol hatsadikim haamitiyim shokhné afar, kédoshim asher baarets héma, ouvifrat lérabénou hakadosh, tsadik yésod olam, nah'al nové mékor h'okhma, Rabénou Nah'man ben Feiga, zékhouto yagen alénou.
 
-Pour la lecture du Tikoun HaKlali, il faut dire les dix chapitres de Tehilim (Psaumes) suivants, dans l'ordre :
-chapitre 16 · chapitre 32 · chapitre 41 · chapitre 42 · chapitre 59 · chapitre 77 · chapitre 90 · chapitre 105 · chapitre 137 · chapitre 150.`,
+— Psaume 16 — Mikhtam léDavid, shomréni El ki h'assiti vakh... (Garde-moi, ô Dieu, car je m'abrite en Toi)
+
+— Psaume 32 — LéDavid maskil, ashré nessouï pésha kessouï h'ataa... (Heureux celui dont la faute est pardonnée)
+
+— Psaume 41 — Lamnatséah' mizmor léDavid, ashré maskil el dal... (Heureux qui prend soin du pauvre)
+
+— Psaume 42 — Kéayal taarog al afiké mayim, ken nafshi taarog élékha Élohim... (Comme le cerf soupire après l'eau, ainsi mon âme soupire vers Toi)
+
+— Psaume 59 — Lamnatséah' al tash'h'et léDavid mikhtam... (Délivre-moi de mes ennemis, mon Dieu)
+
+— Psaume 77 — Lamnatséah' al yédoutoun léAssaf mizmor, koli el Élohim véétsaaka... (Ma voix s'élève vers Dieu et je crie)
+
+— Psaume 90 — Téfila léMoshé ish haÉlohim, Adonaï maon ata hayita lanou bédor vador... (Prière de Moïse : Tu es notre refuge de génération en génération)
+
+— Psaume 105 — Hodou laAdonaï kir'ou bishmo, hodiou vaamim alilotav... (Rendez grâce à l'Éternel, proclamez Son Nom)
+
+— Psaume 137 — Al naharot Bavel sham yashavnou, gam bakhinou bézokhrénou et Tsion... (Sur les fleuves de Babylone, là nous nous sommes assis et avons pleuré, nous souvenant de Sion)
+
+— Psaume 150 — Haleloúya, halélou El békodsho, halélouhou bir'kia ouzo... (Louez Dieu dans Son sanctuaire, louez-Le dans le firmament de Sa puissance)
+
+Mi yiten miTsion yéshouat Israël, béshouv Adonaï shévout amo, yagel Yaakov yissmah' Israël. Outshouat tsadikim méAdonaï, maouzam beet tsara. Vayaazrem Adonaï vayfaltem, yéfaltem méréshaim véyoshiem ki h'assou vo.`,
     francais: `Introduction : Je m'attache, en récitant ces dix psaumes, à tous les véritables Justes de notre génération, et à tous les véritables Justes qui reposent dans la terre sainte, et en particulier à notre saint Maître, Rabbi Nahman fils de Feiga, dont le mérite nous protège.
 
-Le Tikoun HaKlali ("réparation générale") regroupe dix chapitres du Livre des Psaumes choisis par Rabbi Nahman de Breslev : les chapitres 16, 32, 41, 42, 59, 77, 90, 105, 137 et 150. Selon la tradition hassidique de Breslev, leur récitation, dans cet ordre précis, équivaut à un puissant travail de réparation spirituelle et apporte protection et délivrance. Le texte complet de ces psaumes se trouve dans n'importe quel livre de Tehilim (Psaumes), au chapitre indiqué.`,
+Le Tikoun HaKlali regroupe dix chapitres complets du Livre des Psaumes (Tehilim), choisis par Rabbi Nahman de Breslev comme "réparation générale" de l'âme :
+
+• Psaume 16 — Confiance et refuge en Dieu, "Garde-moi, car je m'abrite en Toi".
+• Psaume 32 — Le bonheur du pardon après la confession de la faute.
+• Psaume 41 — La bénédiction de celui qui prend soin du pauvre et du malade.
+• Psaume 42 — L'âme assoiffée de Dieu, "comme le cerf soupire après l'eau".
+• Psaume 59 — Appel à la délivrance face aux ennemis qui rôdent.
+• Psaume 77 — Le souvenir des merveilles divines au cœur de la détresse.
+• Psaume 90 — Prière de Moïse sur la brièveté de la vie et la pérennité de Dieu.
+• Psaume 105 — Hymne de louange rappelant l'histoire du peuple d'Israël.
+• Psaume 137 — Le souvenir nostalgique de Jérusalem depuis l'exil de Babylone.
+• Psaume 150 — Le finale éclatant de louange, "que tout ce qui respire louange l'Éternel".
+
+Versets de clôture : "Que vienne de Sion le salut d'Israël ! Quand l'Éternel restaurera Son peuple, Jacob se réjouira, Israël sera dans l'allégresse." Et : "Le salut des justes vient de l'Éternel, leur forteresse au temps de la détresse ; l'Éternel les aide et les délivre."
+
+Le texte hébreu complet des dix psaumes ci-dessus est repris intégralement (texte traditionnel du Livre des Psaumes).`,
   },
   {
     id: "birkat-halevana",
     titre: "Birkat HaLevana",
+    titreHebreu: "בִּרְכַּת הַלְּבָנָה",
     sousTitre: "Bénédiction de la lune (Kiddouch Levana)",
     icone: "🌙",
     hebreu: `הַלְלוּיָה. הַלְלוּ אֶת יְהֹוָה מִן הַשָּׁמַיִם, הַלְלוּהוּ בַּמְּרוֹמִים. הַלְלוּהוּ כׇל מַלְאָכָיו, הַלְלוּהוּ כׇּל צְבָאָיו. הַלְלוּהוּ שֶׁמֶשׁ וְיָרֵחַ, הַלְלוּהוּ כׇּל כּוֹכְבֵי אוֹר.
@@ -211,6 +336,7 @@ David, roi d'Israël, est vivant et existe (à dire trois fois).`,
   {
     id: "7-berakhot",
     titre: "Cheva Berakhot",
+    titreHebreu: "שֶׁבַע בְּרָכוֹת",
     sousTitre: "Les sept bénédictions du mariage",
     icone: "💍",
     hebreu: `1. בָּרוּךְ אַתָּה יְהֹוָה אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, בּוֹרֵא פְּרִי הַגֶּפֶן.
