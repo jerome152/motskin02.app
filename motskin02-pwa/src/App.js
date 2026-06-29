@@ -20,6 +20,7 @@ const db = getFirestore(firebaseApp);
 
 import logoSrc from "./logo.jpg";
 const LOGO_SRC = logoSrc;
+import { PRIERES } from "./prieres-data";
 
 const HEBCAL_API = "https://www.hebcal.com/shabbat?cfg=json&geonameid=293807&b=20&M=on";
 
@@ -380,14 +381,15 @@ function TabBar({ tab, setTab, t, lang }) {
     { key: "shabbat", icon: "🇮🇱", label: t.shabbatFetes },
     { key: "activites", icon: "📅", label: t.activites },
     { key: "annonces", icon: "📢", label: t.annonces },
+    { key: "boiteaoutils", icon: "🧰", label: lang === "he" ? "כלים" : "Outils" },
     { key: "location", icon: "🏛️", label: t.location },
     { key: "reglements", icon: "💳", label: t.reglements },
   ];
   return (
-    <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: C.white, borderTop: `2px solid ${C.skyBlue}`, display: "flex", zIndex: 100, boxShadow: "0 -2px 10px rgba(0,0,0,0.1)" }}>
+    <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: C.white, borderTop: `2px solid ${C.skyBlue}`, display: "flex", overflowX: "auto", zIndex: 100, boxShadow: "0 -2px 10px rgba(0,0,0,0.1)" }}>
       {tabs.map(tb => (
         <button key={tb.key} onClick={() => setTab(tb.key)} style={{
-          flex: 1, padding: "6px 2px 8px", minWidth: 0,
+          flex: "1 0 12.5%", minWidth: 58, padding: "6px 2px 8px",
           background: tab === tb.key ? `linear-gradient(180deg, ${C.navy} 0%, #1e3d6e 100%)` : "transparent",
           color: tab === tb.key ? C.skyBlueLight : C.gray,
           display: "flex", flexDirection: "column", alignItems: "center", gap: 1, transition: "all 0.2s",
@@ -1892,6 +1894,126 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
   );
 }
 
+// ─── BOÎTE À OUTILS TAB (Prières) ────────────────────────────────────────────
+function FormatSelector({ onSelect }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: C.white, borderRadius: 18, padding: 26, maxWidth: 360, width: "100%", textAlign: "center" }}>
+        <div style={{ fontSize: 32, marginBottom: 10 }}>📖</div>
+        <h3 style={{ color: C.navy, marginBottom: 6, fontSize: 18 }}>Comment souhaitez-vous lire les prières ?</h3>
+        <p style={{ color: C.gray, fontSize: 13, marginBottom: 18 }}>Vous pourrez changer ce choix à tout moment.</p>
+        <button onClick={() => onSelect("hebreu")} style={{ width: "100%", padding: 12, marginBottom: 8, background: C.lightGray, color: C.navy, borderRadius: 10, fontWeight: 700, fontSize: 14 }}>
+          א Hébreu uniquement
+        </button>
+        <button onClick={() => onSelect("phonetique")} style={{ width: "100%", padding: 12, marginBottom: 8, background: C.lightGray, color: C.navy, borderRadius: 10, fontWeight: 700, fontSize: 14 }}>
+          Aa Hébreu + phonétique
+        </button>
+        <button onClick={() => onSelect("francais")} style={{ width: "100%", padding: 12, background: `linear-gradient(135deg, ${C.skyBlue}, #3a9cc8)`, color: C.white, borderRadius: 10, fontWeight: 700, fontSize: 14 }}>
+          🇫🇷 Hébreu + traduction française
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PrayerDetail({ priere, format, onBack, onChangeFormat }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: C.lightGray, zIndex: 350, overflowY: "auto" }}>
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, padding: "16px 16px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10 }}>
+        <button onClick={onBack} style={{ background: "rgba(255,255,255,0.2)", color: C.white, borderRadius: 8, padding: "8px 12px", fontSize: 14 }}>← Retour</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: C.white, fontWeight: 700, fontSize: 16 }}>{priere.icone} {priere.titre}</div>
+          <div style={{ color: C.skyBlueLight, fontSize: 11 }}>{priere.sousTitre}</div>
+        </div>
+        <button onClick={onChangeFormat} style={{ background: "rgba(255,255,255,0.2)", color: C.white, borderRadius: 8, padding: "8px 10px", fontSize: 12 }}>⚙️</button>
+      </div>
+
+      <div style={{ padding: "20px 18px 60px" }}>
+        <div style={{ background: C.white, borderRadius: 14, padding: "20px 18px", marginBottom: format !== "hebreu" ? 16 : 0, boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
+          <div dir="rtl" style={{ fontSize: 21, lineHeight: 1.9, color: C.navy, whiteSpace: "pre-wrap", fontFamily: "serif" }}>
+            {priere.hebreu}
+          </div>
+        </div>
+
+        {format === "phonetique" && (
+          <div style={{ background: `${C.skyBlue}11`, borderRadius: 14, padding: "18px 16px", border: `1px solid ${C.skyBlue}33` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Transcription phonétique</div>
+            <div style={{ fontSize: 15, lineHeight: 1.8, color: C.text, whiteSpace: "pre-wrap", fontStyle: "italic" }}>
+              {priere.phonetique}
+            </div>
+          </div>
+        )}
+
+        {format === "francais" && (
+          <div style={{ background: `${C.skyBlue}11`, borderRadius: 14, padding: "18px 16px", border: `1px solid ${C.skyBlue}33` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Traduction française</div>
+            <div style={{ fontSize: 14, lineHeight: 1.7, color: C.text, whiteSpace: "pre-wrap" }}>
+              {priere.francais}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BoiteAOutilsTab({ t }) {
+  const [format, setFormat] = useState(null); // null until chosen
+  const [showFormatPicker, setShowFormatPicker] = useState(false);
+  const [selectedPriere, setSelectedPriere] = useState(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("priereFormat");
+    if (saved) setFormat(saved);
+    else setShowFormatPicker(true);
+  }, []);
+
+  function chooseFormat(f) {
+    setFormat(f);
+    localStorage.setItem("priereFormat", f);
+    setShowFormatPicker(false);
+  }
+
+  return (
+    <div style={{ padding: "16px 12px 80px" }}>
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, borderRadius: 12, padding: "14px 16px", marginBottom: 16, color: C.white, textAlign: "center" }}>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>🧰 Boîte à outils</div>
+        <div style={{ fontSize: 12, color: C.skyBlueLight, marginTop: 2 }}>Prières et bénédictions — nousah Edot HaMizrah</div>
+      </div>
+
+      {PRIERES.map(p => (
+        <button
+          key={p.id}
+          onClick={() => setSelectedPriere(p)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 14,
+            background: C.white, borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}22`, textAlign: "left",
+          }}
+        >
+          <span style={{ fontSize: 26 }}>{p.icone}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 15 }}>{p.titre}</div>
+            <div style={{ fontSize: 12, color: C.gray, marginTop: 1 }}>{p.sousTitre}</div>
+          </div>
+          <span style={{ color: C.skyBlue, fontSize: 18 }}>›</span>
+        </button>
+      ))}
+
+      {showFormatPicker && <FormatSelector onSelect={chooseFormat} />}
+
+      {selectedPriere && format && (
+        <PrayerDetail
+          priere={selectedPriere}
+          format={format}
+          onBack={() => setSelectedPriere(null)}
+          onChangeFormat={() => setShowFormatPicker(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [lang, setLang] = useState("fr");
@@ -1913,6 +2035,7 @@ export default function App() {
         <div style={{display: tab === "shabbat" ? "block" : "none"}}><ShabbatTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         <div style={{display: tab === "activites" ? "block" : "none"}}><ActivitesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         <div style={{display: tab === "annonces" ? "block" : "none"}}><AnnoncesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
+        <div style={{display: tab === "boiteaoutils" ? "block" : "none"}}><BoiteAOutilsTab t={t} /></div>
         <div style={{display: tab === "location" ? "block" : "none"}}><LocationTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         {tab === "reglements" && <ReglementsTab t={t} />}
       </div>
