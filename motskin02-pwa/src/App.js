@@ -21,6 +21,7 @@ const db = getFirestore(firebaseApp);
 import logoSrc from "./logo.jpg";
 const LOGO_SRC = logoSrc;
 import { PRIERES } from "./prieres-data";
+import { TEHILIM_JOUR } from "./tehilim-data";
 
 const HEBCAL_API = "https://www.hebcal.com/shabbat?cfg=json&geonameid=293807&b=20&M=on";
 
@@ -132,6 +133,7 @@ const T = {
     texteReq: "Message obligatoire",
     annonceAdded: "Annonce publiée !",
     pensee: "Pensée du jour",
+    miniEtude: "Mini étude",
     programme: "Semaine",
     penseeDuJour: "Pensée du jour",
     ajouterPensee: "Ajouter une pensée",
@@ -210,6 +212,7 @@ const T = {
     texteReq: "הודעה חובה",
     annonceAdded: "ההודעה פורסמה!",
     pensee: "מחשבת היום",
+    miniEtude: "לימוד יומי",
     programme: "שבוע",
     penseeDuJour: "מחשבת היום",
     ajouterPensee: "הוסף מחשבה",
@@ -376,29 +379,74 @@ function Header({ lang, setLang, isAdmin, onAdminClick, t }) {
 
 function TabBar({ tab, setTab, t, lang }) {
   const tabs = [
-    { key: "pensee", icon: "💭", label: lang === "he" ? t.pensee : "Pensée" },
+    { key: "pensee", icon: "💭", label: lang === "he" ? t.miniEtude : "Mini étude" },
     { key: "programme", icon: "📋", label: t.programme },
     { key: "shabbat", icon: "🇮🇱", label: t.shabbatFetes },
     { key: "activites", icon: "📅", label: t.activites },
     { key: "annonces", icon: "📢", label: t.annonces },
-    { key: "boiteaoutils", icon: "🧰", label: lang === "he" ? "כלים" : "Outils" },
+    { key: "boiteaoutils", icon: "📔", label: lang === "he" ? "סידור" : "Sidour" },
     { key: "location", icon: "🏛️", label: t.location },
     { key: "reglements", icon: "💳", label: t.reglements },
   ];
+
+  const scrollRef = React.useRef(null);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(true);
+
+  function updateFades() {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowLeftFade(el.scrollLeft > 4);
+    setShowRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }
+
+  useEffect(() => {
+    updateFades();
+    const el = scrollRef.current;
+    if (!el) return;
+    const onResize = () => updateFades();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   return (
-    <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: C.white, borderTop: `2px solid ${C.skyBlue}`, display: "flex", overflowX: "auto", zIndex: 100, boxShadow: "0 -2px 10px rgba(0,0,0,0.1)" }}>
-      {tabs.map(tb => (
-        <button key={tb.key} onClick={() => setTab(tb.key)} style={{
-          flex: "1 0 12.5%", minWidth: 58, padding: "6px 2px 8px",
-          background: tab === tb.key ? `linear-gradient(180deg, ${C.navy} 0%, #1e3d6e 100%)` : "transparent",
-          color: tab === tb.key ? C.skyBlueLight : C.gray,
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 1, transition: "all 0.2s",
-        }}>
-          <span style={{ fontSize: 16 }}>{tb.icon}</span>
-          <span style={{ fontSize: 7.5, fontWeight: 600, textAlign: "center", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{tb.label}</span>
-        </button>
-      ))}
-    </nav>
+    <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100 }}>
+      <nav
+        ref={scrollRef}
+        onScroll={updateFades}
+        style={{ background: C.white, borderTop: `2px solid ${C.skyBlue}`, display: "flex", overflowX: "auto", boxShadow: "0 -2px 10px rgba(0,0,0,0.1)" }}
+      >
+        {tabs.map(tb => (
+          <button key={tb.key} onClick={() => setTab(tb.key)} style={{
+            flex: "1 0 12.5%", minWidth: 58, padding: "6px 2px 8px",
+            background: tab === tb.key ? `linear-gradient(180deg, ${C.navy} 0%, #1e3d6e 100%)` : "transparent",
+            color: tab === tb.key ? C.skyBlueLight : C.gray,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 1, transition: "all 0.2s",
+          }}>
+            <span style={{ fontSize: 16 }}>{tb.icon}</span>
+            <span style={{ fontSize: 7.5, fontWeight: 600, textAlign: "center", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{tb.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* Fade + animated chevron hints showing more tabs are reachable by scrolling */}
+      {showRightFade && (
+        <div style={{ position: "absolute", top: 2, bottom: 0, right: 0, width: 34, pointerEvents: "none", background: "linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 70%)", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 2 }}>
+          <span style={{ color: C.skyBlue, fontSize: 14, animation: "tabHintPulse 1.6s ease-in-out infinite" }}>›</span>
+        </div>
+      )}
+      {showLeftFade && (
+        <div style={{ position: "absolute", top: 2, bottom: 0, left: 0, width: 34, pointerEvents: "none", background: "linear-gradient(to left, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 70%)", display: "flex", alignItems: "center", justifyContent: "flex-start", paddingLeft: 2 }}>
+          <span style={{ color: C.skyBlue, fontSize: 14, animation: "tabHintPulse 1.6s ease-in-out infinite" }}>‹</span>
+        </div>
+      )}
+      <style>{`
+        @keyframes tabHintPulse {
+          0%, 100% { opacity: 0.35; transform: translateX(0); }
+          50% { opacity: 1; transform: translateX(3px); }
+        }
+      `}</style>
+    </div>
   );
 }
 
@@ -1018,6 +1066,10 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
   const todayIndex = getDayIndex() % allPensees.length;
   const todayPensee = allPensees[todayIndex];
 
+  // Daily psalm: independent rotation so it doesn't always change in sync with the quote
+  const tehilimIndex = (getDayIndex() + 2) % TEHILIM_JOUR.length;
+  const todayTehilim = TEHILIM_JOUR[tehilimIndex];
+
   async function add() {
     if (!form.texte.trim()) return;
     const entry = { ...form, id: Date.now().toString() };
@@ -1069,6 +1121,36 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
             )}
           </>
         )}
+      </div>
+
+      <div style={{
+        background: C.white, borderRadius: 18, padding: "22px 20px", marginBottom: 20,
+        boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{ fontSize: 22 }}>📜</span>
+          <div>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 14 }}>Tehilim du jour</div>
+            <div style={{ fontSize: 11, color: C.gray }}>Psaume {todayTehilim.numero} — {todayTehilim.titre}</div>
+          </div>
+        </div>
+
+        <div dir="rtl" style={{ fontSize: 16, lineHeight: 1.8, color: C.text, marginBottom: 12, fontFamily: "serif" }}>
+          {todayTehilim.hebreu}
+        </div>
+
+        <div style={{ height: 1, background: C.lightGray, margin: "12px 0" }} />
+
+        <div style={{ fontSize: 13, lineHeight: 1.6, color: C.gray }}>
+          {todayTehilim.francais}
+        </div>
+
+        <button
+          onClick={() => sharePensee({ texte: todayTehilim.hebreu, source: `Tehilim ${todayTehilim.numero}`, texteHe: "", sourceHe: "" })}
+          style={{ width: "100%", marginTop: 14, padding: 10, background: "#25D366", color: "#fff", borderRadius: 8, fontWeight: 700, fontSize: 13, border: "none" }}
+        >
+          💬 {t.partager}
+        </button>
       </div>
 
       {isAdmin && (
@@ -1916,6 +1998,144 @@ function FormatSelector({ onSelect }) {
   );
 }
 
+// Generates a shareable card for a Sidour prayer: Hebrew text + French translation + Motskin02 logo
+async function generatePriereShareCard(priere) {
+  const W = 800;
+  const PAD = 44;
+  const maxChars = 600; // keep the card readable; full text stays in the app
+  const hebTrunc = priere.hebreu.length > maxChars ? priere.hebreu.slice(0, maxChars).trim() + " (…)" : priere.hebreu;
+  const fraTrunc = priere.francais.length > maxChars ? priere.francais.slice(0, maxChars).trim() + " (…)" : priere.francais;
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  // First pass: measure text heights using a temp context at final width
+  ctx.font = "26px Arial, sans-serif";
+  function wrapLines(text, maxWidth) {
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+    for (let i = 0; i < words.length; i++) {
+      const test = line + words[i] + " ";
+      if (ctx.measureText(test).width > maxWidth && line !== "") {
+        lines.push(line.trim());
+        line = words[i] + " ";
+      } else {
+        line = test;
+      }
+    }
+    if (line.trim()) lines.push(line.trim());
+    return lines;
+  }
+
+  ctx.font = "italic 24px Arial, sans-serif";
+  const fraLines = wrapLines(fraTrunc, W - PAD * 2);
+  ctx.font = "30px Arial, sans-serif";
+  const hebLines = wrapLines(hebTrunc, W - PAD * 2);
+
+  const headerH = 150;
+  const hebLineH = 42;
+  const fraLineH = 34;
+  const sepH = 30;
+  const footerH = 70;
+  const H = headerH + hebLines.length * hebLineH + sepH + fraLines.length * fraLineH + footerH + PAD;
+
+  canvas.width = W;
+  canvas.height = H;
+
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#ffffff");
+  grad.addColorStop(1, "#f0f4f8");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  let y = 0;
+
+  // Header band with logo + titles
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillRect(0, 0, W, headerH);
+
+  const logoImg = await new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = LOGO_SRC;
+  });
+  if (logoImg) {
+    const logoSize = 86;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(PAD + logoSize / 2, headerH / 2, logoSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(logoImg, PAD, headerH / 2 - logoSize / 2, logoSize, logoSize);
+    ctx.restore();
+  }
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 30px Arial, sans-serif";
+  ctx.fillText(priere.titre, PAD + 104, headerH / 2 - 6);
+  if (priere.titreHebreu) {
+    ctx.font = "26px Arial, sans-serif";
+    ctx.fillStyle = "#a8ddf4";
+    // RTL draw: align right edge manually since canvas RTL support is inconsistent
+    ctx.textAlign = "right";
+    ctx.fillText(priere.titreHebreu, W - PAD, headerH / 2 - 6);
+    ctx.textAlign = "left";
+  }
+  ctx.font = "16px Arial, sans-serif";
+  ctx.fillStyle = "#a8ddf4";
+  ctx.fillText(priere.sousTitre || "", PAD + 104, headerH / 2 + 22);
+
+  y = headerH + 36;
+
+  // Hebrew block (right-aligned, RTL feel)
+  ctx.font = "30px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.textAlign = "right";
+  hebLines.forEach(line => {
+    ctx.fillText(line, W - PAD, y);
+    y += hebLineH;
+  });
+
+  y += sepH / 2;
+  ctx.strokeStyle = "#5bbfea55";
+  ctx.beginPath();
+  ctx.moveTo(PAD, y);
+  ctx.lineTo(W - PAD, y);
+  ctx.stroke();
+  y += sepH / 2 + 14;
+
+  // French block (left-aligned)
+  ctx.font = "italic 24px Arial, sans-serif";
+  ctx.fillStyle = "#374151";
+  ctx.textAlign = "left";
+  fraLines.forEach(line => {
+    ctx.fillText(line, PAD, y);
+    y += fraLineH;
+  });
+
+  // Footer
+  y = H - footerH / 2;
+  ctx.textAlign = "center";
+  ctx.font = "bold 22px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillText("🇮🇱 Beth Haknesset Motskin02", W / 2, y);
+
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+async function sharePriere(priere) {
+  try {
+    const cardDataUrl = await generatePriereShareCard(priere);
+    await shareCardImage(cardDataUrl, priere.titre);
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText(priere.titre, [priere.francais.slice(0, 200)]);
+  }
+}
+
 function PrayerDetail({ priere, format, onBack, onChangeFormat }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: C.lightGray, zIndex: 350, overflowY: "auto" }}>
@@ -1923,6 +2143,7 @@ function PrayerDetail({ priere, format, onBack, onChangeFormat }) {
         <button onClick={onBack} style={{ background: "rgba(255,255,255,0.2)", color: C.white, borderRadius: 8, padding: "8px 12px", fontSize: 14 }}>← Retour</button>
         <div style={{ flex: 1 }}>
           <div style={{ color: C.white, fontWeight: 700, fontSize: 16 }}>{priere.icone} {priere.titre}</div>
+          {priere.titreHebreu && <div dir="rtl" style={{ color: C.skyBlueLight, fontSize: 13, fontFamily: "serif" }}>{priere.titreHebreu}</div>}
           <div style={{ color: C.skyBlueLight, fontSize: 11 }}>{priere.sousTitre}</div>
         </div>
         <button onClick={onChangeFormat} style={{ background: "rgba(255,255,255,0.2)", color: C.white, borderRadius: 8, padding: "8px 10px", fontSize: 12 }}>⚙️</button>
@@ -1952,6 +2173,13 @@ function PrayerDetail({ priere, format, onBack, onChangeFormat }) {
             </div>
           </div>
         )}
+
+        <button
+          onClick={() => sharePriere(priere)}
+          style={{ width: "100%", marginTop: 16, padding: 12, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
+        >
+          💬 Partager
+        </button>
       </div>
     </div>
   );
@@ -1977,7 +2205,7 @@ function BoiteAOutilsTab({ t }) {
   return (
     <div style={{ padding: "16px 12px 80px" }}>
       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, borderRadius: 12, padding: "14px 16px", marginBottom: 16, color: C.white, textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 700 }}>🧰 Boîte à outils</div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>📔 Sidour</div>
         <div style={{ fontSize: 12, color: C.skyBlueLight, marginTop: 2 }}>Prières et bénédictions — nousah Edot HaMizrah</div>
       </div>
 
@@ -1994,6 +2222,7 @@ function BoiteAOutilsTab({ t }) {
           <span style={{ fontSize: 26 }}>{p.icone}</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, color: C.navy, fontSize: 15 }}>{p.titre}</div>
+            {p.titreHebreu && <div dir="rtl" style={{ fontSize: 13, color: C.navy, marginTop: 1, fontFamily: "serif" }}>{p.titreHebreu}</div>}
             <div style={{ fontSize: 12, color: C.gray, marginTop: 1 }}>{p.sousTitre}</div>
           </div>
           <span style={{ color: C.skyBlue, fontSize: 18 }}>›</span>
