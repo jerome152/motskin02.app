@@ -606,6 +606,11 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
             <Row label={`🌙 ${t.arvit}`} value={ev.arvit} />
             {ev.birkat && <div style={{ background: `${C.skyBlue}22`, padding: "6px 10px", borderRadius: 8, marginTop: 6, fontSize: 12, color: C.navy, fontWeight: 600 }}>🌙 {t.birkatHalevana}</div>}
             {ev.prochaineDate && ev.prochaineText && <Row label={`📅 ${t.prochaineDate}`} value={ev.prochaineText} />}
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+              <button onClick={() => shareShabbatEvent(ev, t, nextShabbat)} style={{ background: "#25D366", color: "#fff", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, border: "none" }}>
+                📤 {t.partager}
+              </button>
+            </div>
           </div>
         </Card>
       ))}
@@ -716,7 +721,12 @@ function ActivitesTab({ isAdmin, t, activeTab }) {
               {ev.tarif && <Chip>💰 {ev.tarif}</Chip>}
             </div>
             {ev.description && <p style={{ fontSize: 13, color: C.gray, lineHeight: 1.5, marginTop: 8 }}>{ev.description}</p>}
-            {isAdmin && <AdminBtns onUp={() => move(idx, -1)} onDown={() => move(idx, 1)} onEdit={() => { setForm({ ...ev, description: ev.description || "" }); setEditing(ev.id); setShowForm(true); }} onDelete={() => del(ev.id)} t={t} />}
+            <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+              <button onClick={() => shareEvent(ev)} style={{ background: "#25D366", color: "#fff", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, border: "none" }}>
+                📤 {t.partager}
+              </button>
+              {isAdmin && <AdminBtns onUp={() => move(idx, -1)} onDown={() => move(idx, 1)} onEdit={() => { setForm({ ...ev, description: ev.description || "" }); setEditing(ev.id); setShowForm(true); }} onDelete={() => del(ev.id)} t={t} />}
+            </div>
           </div>
         </Card>
       ))}
@@ -1235,6 +1245,158 @@ async function generateShareCard({ title, lines, photoData }) {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
+// Generates a faithful reproduction of the full Shabbat/Fête label as a shareable image:
+// photo, badge + name, the "next times" header, then every label/value row.
+async function generateShabbatShareCard(ev, t, nextShabbat) {
+  const W = 800;
+  const PAD = 50;
+  const hasPhoto = !!ev.photoData;
+  const photoH = hasPhoto ? 380 : 0;
+
+  // Build the list of rows to render, mirroring the on-screen card exactly
+  const rows = [];
+  if (nextShabbat) {
+    rows.push({ kind: "header", text: "⏰ Prochains horaires • Ra'anana" });
+    rows.push({ label: `🕯️ ${t.allumage}`, value: formatTime(nextShabbat.candle) });
+    if (nextShabbat.havdalah) rows.push({ label: "✨ Havdala", value: formatTime(nextShabbat.havdalah) });
+  }
+  rows.push({ label: `🕯️ ${t.allumage}`, value: ev.entree });
+  rows.push({ label: `🙏 ${t.minhaBefore}`, value: ev.minhaBefore });
+  if (ev.showChiourBefore && ev.chiourBeforeText) rows.push({ label: "📚 Chiour", value: ev.chiourBeforeText });
+  rows.push({ label: `☀️ ${t.chakharit}`, value: ev.chakharit });
+  if (ev.paracha) rows.push({ label: `📖 ${t.paracha}`, value: ev.paracha });
+  if (ev.kiddouch) rows.push({ label: `🍷 ${t.kiddouch}`, value: ev.kiddouch });
+  rows.push({ label: `📚 ${t.chiour}`, value: ev.chiour });
+  rows.push({ label: `🌅 ${t.minhaAfternoon}`, value: ev.minhaAfternoon });
+  if (ev.type === "shabbat" && ev.seoudaText) rows.push({ label: `🍞 ${t.seoudaChl}`, value: ev.seoudaText });
+  rows.push({ label: `🌙 ${t.arvit}`, value: ev.arvit });
+  if (ev.birkat) rows.push({ kind: "banner", text: `🌙 ${t.birkatHalevana}` });
+  if (ev.prochaineDate && ev.prochaineText) rows.push({ label: `📅 ${t.prochaineDate}`, value: ev.prochaineText });
+
+  const rowH = 42;
+  const headerH = 50;
+  const bannerH = 56;
+  let bodyH = 0;
+  rows.forEach(r => { bodyH += r.kind === "header" ? headerH : r.kind === "banner" ? bannerH : rowH; });
+
+  const titleH = 110; // badge + name
+  const footerH = 70;
+  const H = photoH + titleH + bodyH + footerH + PAD;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#ffffff");
+  grad.addColorStop(1, "#f0f4f8");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  let y = 0;
+
+  // Photo
+  if (hasPhoto) {
+    const img = await new Promise((resolve) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => resolve(null);
+      im.src = ev.photoData;
+    });
+    if (img) {
+      const scale = Math.max(W / img.width, photoH / img.height);
+      const sw = W / scale, sh = photoH / scale;
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, photoH);
+    }
+    y = photoH;
+  }
+
+  // Badge + name block (navy background)
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillRect(0, y, W, titleH);
+  const badgeText = ev.type === "shabbat" ? t.shabbat : t.fete;
+  ctx.font = "bold 22px Arial, sans-serif";
+  const badgeW = ctx.measureText(badgeText).width + 36;
+  ctx.fillStyle = ev.type === "shabbat" ? "#3a9cc8" : "#5bbfea";
+  roundRect(ctx, PAD, y + 22, badgeW, 36, 18);
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "left";
+  ctx.fillText(badgeText, PAD + 18, y + 47);
+  ctx.font = "bold 34px Arial, sans-serif";
+  ctx.fillText(ev.nom || "", PAD, y + 95);
+  y += titleH;
+
+  // Rows
+  ctx.textAlign = "left";
+  rows.forEach(r => {
+    if (r.kind === "header") {
+      ctx.fillStyle = "#1a2e52";
+      ctx.font = "bold 20px Arial, sans-serif";
+      ctx.fillText(r.text, PAD, y + 32);
+      y += headerH;
+    } else if (r.kind === "banner") {
+      ctx.fillStyle = "#5bbfea33";
+      roundRect(ctx, PAD, y + 6, W - PAD * 2, bannerH - 16, 10);
+      ctx.fillStyle = "#1a2e52";
+      ctx.font = "bold 22px Arial, sans-serif";
+      ctx.fillText(r.text, PAD + 16, y + bannerH / 2 + 7);
+      y += bannerH;
+    } else {
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.beginPath();
+      ctx.moveTo(PAD, y + rowH - 6);
+      ctx.lineTo(W - PAD, y + rowH - 6);
+      ctx.stroke();
+
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "24px Arial, sans-serif";
+      ctx.fillText(r.label, PAD, y + 28);
+
+      ctx.fillStyle = "#1a2e52";
+      ctx.font = "bold 24px Arial, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(r.value || "—", W - PAD, y + 28);
+      ctx.textAlign = "left";
+
+      y += rowH;
+    }
+  });
+
+  // Footer
+  y += 20;
+  ctx.textAlign = "center";
+  ctx.font = "bold 22px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillText("🇮🇱 Beth Haknesset Motskin02", W / 2, y + 24);
+
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.fill();
+}
+
+async function shareShabbatEvent(ev, t, nextShabbat) {
+  try {
+    const cardDataUrl = await generateShabbatShareCard(ev, t, nextShabbat);
+    await shareCardImage(cardDataUrl, ev.nom);
+  } catch (e) {
+    console.error("Share card error:", e);
+    const lines = [`🕯️ ${ev.entree}`, `☀️ ${ev.chakharit}`];
+    shareAsText(ev.nom, lines);
+  }
+}
+
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const words = text.split(" ");
   let line = "";
@@ -1270,18 +1432,22 @@ function countWrappedLines(ctx, text, maxWidth) {
 
 // Shares an event as a generated image card via native share (WhatsApp, etc.) or falls back to text
 async function shareEvent(item) {
+  const title = item.intitule || item.titre;
   const lines = [];
   if (item.date) lines.push(`📅 ${item.date}`);
   if (item.horaire) lines.push(`🕐 ${item.horaire}${item.heureFin ? ` → ${item.heureFin}` : ""}`);
+  if (item.heure) lines.push(`🕐 ${item.heure}${item.showHeureFin && item.heureFin ? ` → ${item.heureFin}` : ""}`);
   if (item.lieu) lines.push(`📍 ${item.lieu}`);
+  if (item.public) lines.push(`👥 ${item.public}`);
+  if (item.tarif) lines.push(`💰 ${item.tarif}`);
   if (item.description) lines.push(item.description.length > 80 ? item.description.slice(0, 80) + "…" : item.description);
 
   try {
-    const cardDataUrl = await generateShareCard({ title: item.intitule, lines, photoData: item.photoData });
-    await shareCardImage(cardDataUrl, item.intitule);
+    const cardDataUrl = await generateShareCard({ title, lines, photoData: item.photoData });
+    await shareCardImage(cardDataUrl, title);
   } catch (e) {
     console.error("Share card error:", e);
-    shareAsText(item.intitule, lines);
+    shareAsText(title, lines);
   }
 }
 
