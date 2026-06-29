@@ -1033,7 +1033,8 @@ function getDayIndex() {
   return Math.floor(Date.now() / (1000 * 60 * 60 * 24));
 }
 
-async function sharePensee(pensee) {
+async function sharePensee(pensee, customTitle) {
+  const title = customTitle || "💭 Pensée du jour";
   const lines = [pensee.texte];
   if (pensee.source) lines.push(`— ${pensee.source}`);
   if (pensee.texteHe) {
@@ -1042,11 +1043,11 @@ async function sharePensee(pensee) {
     if (pensee.sourceHe) lines.push(`— ${pensee.sourceHe}`);
   }
   try {
-    const cardDataUrl = await generateShareCard({ title: "💭 Pensée du jour", lines, photoData: null });
-    await shareCardImage(cardDataUrl, "pensee-du-jour");
+    const cardDataUrl = await generateShareCard({ title, lines, photoData: null });
+    await shareCardImage(cardDataUrl, title.replace(/[^a-z0-9]/gi, "_"));
   } catch (e) {
     console.error("Share card error:", e);
-    shareAsText("💭 Pensée du jour", lines);
+    shareAsText(title, lines);
   }
 }
 
@@ -1146,7 +1147,7 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
         </div>
 
         <button
-          onClick={() => sharePensee({ texte: todayTehilim.hebreu, source: `Tehilim ${todayTehilim.numero}`, texteHe: "", sourceHe: "" })}
+          onClick={() => sharePensee({ texte: todayTehilim.hebreu, source: todayTehilim.francais, texteHe: "", sourceHe: "" }, `📜 Tehilim ${todayTehilim.numero} — ${todayTehilim.titre}`)}
           style={{ width: "100%", marginTop: 14, padding: 10, background: "#25D366", color: "#fff", borderRadius: 8, fontWeight: 700, fontSize: 13, border: "none" }}
         >
           💬 {t.partager}
@@ -1322,9 +1323,32 @@ async function generateShareCard({ title, lines, photoData }) {
 
   // Footer with logo + synagogue name
   y = H - 50;
+  const footerLogo = await new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = LOGO_SRC;
+  });
   ctx.font = "bold 24px Arial, sans-serif";
   ctx.fillStyle = "#a8ddf4";
-  ctx.fillText("Beth Haknesset Motskin02", W / 2, y);
+  const footerText = "Beth Haknesset Motskin02";
+  if (footerLogo) {
+    const logoSize = 34;
+    const textWidth = ctx.measureText(footerText).width;
+    const totalWidth = logoSize + 10 + textWidth;
+    const startX = W / 2 - totalWidth / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(startX + logoSize / 2, y - logoSize / 2 + 8, logoSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(footerLogo, startX, y - logoSize + 8, logoSize, logoSize);
+    ctx.restore();
+    ctx.textAlign = "left";
+    ctx.fillText(footerText, startX + logoSize + 10, y);
+    ctx.textAlign = "center";
+  } else {
+    ctx.fillText(footerText, W / 2, y);
+  }
 
   return canvas.toDataURL("image/jpeg", 0.85);
 }
@@ -1451,10 +1475,32 @@ async function generateShabbatShareCard(ev, t, nextShabbat) {
 
   // Footer
   y += 20;
-  ctx.textAlign = "center";
+  const shabbatFooterLogo = await new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = LOGO_SRC;
+  });
   ctx.font = "bold 22px Arial, sans-serif";
   ctx.fillStyle = "#1a2e52";
-  ctx.fillText("🇮🇱 Beth Haknesset Motskin02", W / 2, y + 24);
+  const shabbatFooterText = "🇮🇱 Beth Haknesset Motskin02";
+  if (shabbatFooterLogo) {
+    ctx.textAlign = "left";
+    const logoSize = 32;
+    const textWidth = ctx.measureText(shabbatFooterText).width;
+    const totalWidth = logoSize + 10 + textWidth;
+    const startX = W / 2 - totalWidth / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(startX + logoSize / 2, y + 24 - logoSize / 2 + 8, logoSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(shabbatFooterLogo, startX, y + 24 - logoSize + 8, logoSize, logoSize);
+    ctx.restore();
+    ctx.fillText(shabbatFooterText, startX + logoSize + 10, y + 24);
+    ctx.textAlign = "center";
+  } else {
+    ctx.fillText(shabbatFooterText, W / 2, y + 24);
+  }
 
   return canvas.toDataURL("image/jpeg", 0.9);
 }
@@ -2002,36 +2048,39 @@ function FormatSelector({ onSelect }) {
 async function generatePriereShareCard(priere) {
   const W = 800;
   const PAD = 44;
-  const maxChars = 600; // keep the card readable; full text stays in the app
-  const hebTrunc = priere.hebreu.length > maxChars ? priere.hebreu.slice(0, maxChars).trim() + " (…)" : priere.hebreu;
-  const fraTrunc = priere.francais.length > maxChars ? priere.francais.slice(0, maxChars).trim() + " (…)" : priere.francais;
+  // No truncation: the canvas height grows to fit the full text, however long.
+  const hebFull = priere.hebreu;
+  const fraFull = priere.francais;
 
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  // First pass: measure text heights using a temp context at final width
-  ctx.font = "26px Arial, sans-serif";
+  // Wrap text respecting explicit line breaks already present (e.g. Birkat HaMazon paragraphs)
   function wrapLines(text, maxWidth) {
-    const words = text.split(" ");
+    const paragraphs = text.split("\n");
     const lines = [];
-    let line = "";
-    for (let i = 0; i < words.length; i++) {
-      const test = line + words[i] + " ";
-      if (ctx.measureText(test).width > maxWidth && line !== "") {
-        lines.push(line.trim());
-        line = words[i] + " ";
-      } else {
-        line = test;
+    paragraphs.forEach((para, idx) => {
+      if (para.trim() === "") { lines.push(""); return; }
+      const words = para.split(" ");
+      let line = "";
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + " ";
+        if (ctx.measureText(test).width > maxWidth && line !== "") {
+          lines.push(line.trim());
+          line = words[i] + " ";
+        } else {
+          line = test;
+        }
       }
-    }
-    if (line.trim()) lines.push(line.trim());
+      if (line.trim()) lines.push(line.trim());
+    });
     return lines;
   }
 
   ctx.font = "italic 24px Arial, sans-serif";
-  const fraLines = wrapLines(fraTrunc, W - PAD * 2);
+  const fraLines = wrapLines(fraFull, W - PAD * 2);
   ctx.font = "30px Arial, sans-serif";
-  const hebLines = wrapLines(hebTrunc, W - PAD * 2);
+  const hebLines = wrapLines(hebFull, W - PAD * 2);
 
   const headerH = 150;
   const hebLineH = 42;
