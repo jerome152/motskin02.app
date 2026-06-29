@@ -281,8 +281,8 @@ async function deleteItem(collectionName, id) {
   } catch(e) { console.error(e); }
 }
 
-// Compress image to max ~400KB before saving
-async function compressImage(base64Data, maxWidth = 800, quality = 0.7) {
+// Compress image to stay safely under Firestore's 1MB document limit
+async function compressImage(base64Data, maxWidth = 700, quality = 0.6) {
   if (!base64Data || !base64Data.startsWith("data:image")) return base64Data;
   return new Promise((resolve) => {
     const img = new Image();
@@ -293,7 +293,14 @@ async function compressImage(base64Data, maxWidth = 800, quality = 0.7) {
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", quality));
+      let result = canvas.toDataURL("image/jpeg", quality);
+      // If still too large, compress further in steps
+      let q = quality;
+      while (result.length > 350000 && q > 0.25) {
+        q -= 0.1;
+        result = canvas.toDataURL("image/jpeg", q);
+      }
+      resolve(result);
     };
     img.onerror = () => resolve(base64Data);
     img.src = base64Data;
@@ -303,12 +310,15 @@ async function compressImage(base64Data, maxWidth = 800, quality = 0.7) {
 async function saveData(collectionName, dataArray) {
   // Save to localStorage immediately
   try { localStorage.setItem(collectionName, JSON.stringify(dataArray)); } catch {}
-  // Save to Firestore (photos are already compressed at upload time)
-  try {
-    await Promise.all(dataArray.map((item, idx) => 
-      setDoc(doc(db, collectionName, item.id), { ...item, _order: idx })
-    ));
-  } catch(e) { console.error("Firebase save error:", e); }
+  // Save to Firestore, preserving each item's own _order if already set
+  const results = await Promise.allSettled(dataArray.map((item) =>
+    setDoc(doc(db, collectionName, item.id), { ...item, _order: item._order ?? 0 })
+  ));
+  const failed = results.filter(r => r.status === "rejected");
+  if (failed.length > 0) {
+    console.error("Firebase save errors:", failed.map(f => f.reason));
+    alert("⚠️ Certaines données n'ont pas pu être sauvegardées (photo trop volumineuse ?). Essayez avec une photo plus légère.");
+  }
 }
 
 async function notifyUsers(title, message) {
@@ -352,10 +362,12 @@ function Header({ lang, setLang, isAdmin, onAdminClick, t }) {
           style={{ background: "rgba(255,255,255,0.2)", color: C.white, border: "1px solid rgba(255,255,255,0.5)", borderRadius: 20, padding: "4px 10px", fontSize: 12 }}>
           {lang === "fr" ? "עברית" : "Français"}
         </button>
-        <button onClick={onAdminClick}
-          style={{ background: isAdmin ? C.white : "rgba(255,255,255,0.15)", color: isAdmin ? C.navy : C.white, border: "1px solid rgba(255,255,255,0.5)", borderRadius: 20, padding: "4px 10px", fontSize: 12 }}>
-          {isAdmin ? t.logout : t.admin}
-        </button>
+        {isAdmin && (
+          <button onClick={onAdminClick}
+            style={{ background: C.white, color: C.navy, border: "1px solid rgba(255,255,255,0.5)", borderRadius: 20, padding: "4px 10px", fontSize: 12 }}>
+            {t.logout}
+          </button>
+        )}
       </div>
     </header>
   );
@@ -819,6 +831,17 @@ function ReglementsTab({ t }) {
 
 
 // ─── ANNONCES TAB ────────────────────────────────────────────────────────────
+async function shareAnnonce(a) {
+  const lines = [`👤 ${a.prenom} ${a.nom}`, `🗓️ ${a.date}`, "", a.texte];
+  try {
+    const cardDataUrl = await generateShareCard({ title: "📢 Annonce", lines, photoData: a.photoData });
+    await shareCardImage(cardDataUrl, "annonce");
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText("📢 Annonce", lines);
+  }
+}
+
 function AnnoncesTab({ isAdmin, t, activeTab }) {
   const [annonces, setAnnonces] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -892,13 +915,12 @@ function AnnoncesTab({ isAdmin, t, activeTab }) {
               )}
             </div>
             <p style={{ fontSize: 14, color: C.text, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: 10 }}>{a.texte}</p>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`📢 *${a.prenom} ${a.nom}* (${a.date}):\n\n${a.texte}`)}`}
-              target="_blank" rel="noopener"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#25D366", color: "#fff", padding: "7px 14px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 600 }}
+            <button
+              onClick={() => shareAnnonce(a)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#25D366", color: "#fff", padding: "7px 14px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600 }}
             >
               <span>💬</span> Partager sur WhatsApp
-            </a>
+            </button>
           </div>
         </Card>
       ))}
@@ -951,7 +973,24 @@ function getDayIndex() {
   return Math.floor(Date.now() / (1000 * 60 * 60 * 24));
 }
 
-function PenseeTab({ isAdmin, t, activeTab, lang }) {
+async function sharePensee(pensee) {
+  const lines = [pensee.texte];
+  if (pensee.source) lines.push(`— ${pensee.source}`);
+  if (pensee.texteHe) {
+    lines.push("");
+    lines.push(pensee.texteHe);
+    if (pensee.sourceHe) lines.push(`— ${pensee.sourceHe}`);
+  }
+  try {
+    const cardDataUrl = await generateShareCard({ title: "💭 Pensée du jour", lines, photoData: null });
+    await shareCardImage(cardDataUrl, "pensee-du-jour");
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText("💭 Pensée du jour", lines);
+  }
+}
+
+function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
   const [pensees, setPensees] = useState([]);
   const [showManage, setShowManage] = useState(false);
   const [form, setForm] = useState({ texte: "", source: "", texteHe: "", sourceHe: "" });
@@ -1021,10 +1060,27 @@ function PenseeTab({ isAdmin, t, activeTab, lang }) {
       </div>
 
       {isAdmin && (
-        <button onClick={() => setShowManage(true)} style={{ width: "100%", padding: 12, background: C.lightGray, color: C.navy, borderRadius: 10, fontWeight: 600, fontSize: 14, border: `1px solid ${C.skyBlue}55` }}>
+        <button onClick={() => setShowManage(true)} style={{ width: "100%", padding: 12, background: C.lightGray, color: C.navy, borderRadius: 10, fontWeight: 600, fontSize: 14, border: `1px solid ${C.skyBlue}55`, marginBottom: 12 }}>
           ⚙️ {t.gererPensees}
         </button>
       )}
+
+      <button
+        onClick={() => sharePensee(todayPensee)}
+        style={{ width: "100%", padding: 12, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
+      >
+        💬 {t.partager}
+      </button>
+
+      <div style={{ textAlign: "center", marginTop: 28 }}>
+        <button
+          onClick={onAdminClick}
+          aria-label="admin"
+          style={{ background: "transparent", border: "none", color: isAdmin ? C.skyBlue : "#cbd5e1", fontSize: 20, padding: 10, letterSpacing: 3 }}
+        >
+          •••
+        </button>
+      </div>
 
       {showManage && (
         <Modal>
@@ -1111,17 +1167,143 @@ const DEFAULT_DAY_EVENTS = {
   mardi: [{ key: "default-orot", intitule: "Orot du Rav Kook — par Rabbi Yaacov", horaire: "", lieu: "" }],
 };
 
-function shareEvent(item) {
-  const lines = [`📅 ${item.intitule}`];
-  if (item.horaire) lines.push(`🕐 ${item.horaire}`);
+// Generates a shareable "card" image (canvas) combining the event's photo (if any),
+// title, time/place info, and the synagogue logo — styled like a label/poster.
+async function generateShareCard({ title, lines, photoData }) {
+  const W = 800;
+  const hasPhoto = !!photoData;
+  const photoH = hasPhoto ? 420 : 0;
+  const textBlockH = 60 + lines.length * 44 + 90; // title + info lines + footer
+  const H = photoH + textBlockH;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  // Background gradient (navy to sky blue, matching the app's identity)
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#1a2e52");
+  grad.addColorStop(1, "#3a9cc8");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  let y = 0;
+
+  // Photo on top, if provided
+  if (hasPhoto) {
+    const img = await new Promise((resolve) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => resolve(null);
+      im.src = photoData;
+    });
+    if (img) {
+      // Cover-fit the photo into the photo area
+      const scale = Math.max(W / img.width, photoH / img.height);
+      const sw = W / scale, sh = photoH / scale;
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, photoH);
+    }
+    y = photoH;
+  }
+
+  // Text block
+  ctx.textAlign = "center";
+
+  // Title
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 38px Arial, sans-serif";
+  y += 64;
+  wrapText(ctx, title, W / 2, y, W - 80, 46);
+  y += (countWrappedLines(ctx, title, W - 80) - 1) * 46;
+
+  // Info lines (time, place, etc.)
+  ctx.font = "28px Arial, sans-serif";
+  ctx.fillStyle = "#dceefb";
+  lines.forEach(line => {
+    y += 44;
+    ctx.fillText(line, W / 2, y);
+  });
+
+  // Footer with logo + synagogue name
+  y = H - 50;
+  ctx.font = "bold 24px Arial, sans-serif";
+  ctx.fillStyle = "#a8ddf4";
+  ctx.fillText("Beth Haknesset Motskin02", W / 2, y);
+
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  let curY = y;
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + " ";
+    if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+      ctx.fillText(line.trim(), x, curY);
+      line = words[i] + " ";
+      curY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, curY);
+}
+
+function countWrappedLines(ctx, text, maxWidth) {
+  const words = text.split(" ");
+  let line = "";
+  let count = 1;
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i] + " ";
+    if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+      count++;
+      line = words[i] + " ";
+    } else {
+      line = testLine;
+    }
+  }
+  return count;
+}
+
+// Shares an event as a generated image card via native share (WhatsApp, etc.) or falls back to text
+async function shareEvent(item) {
+  const lines = [];
+  if (item.date) lines.push(`📅 ${item.date}`);
+  if (item.horaire) lines.push(`🕐 ${item.horaire}${item.heureFin ? ` → ${item.heureFin}` : ""}`);
   if (item.lieu) lines.push(`📍 ${item.lieu}`);
-  lines.push("", "Beth Haknesset Motskin02");
-  const text = lines.join("\n");
+  if (item.description) lines.push(item.description.length > 80 ? item.description.slice(0, 80) + "…" : item.description);
+
+  try {
+    const cardDataUrl = await generateShareCard({ title: item.intitule, lines, photoData: item.photoData });
+    await shareCardImage(cardDataUrl, item.intitule);
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText(item.intitule, lines);
+  }
+}
+
+async function shareCardImage(dataUrl, filenameBase) {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const file = new File([blob], `${(filenameBase || "evenement").replace(/[^a-z0-9]/gi, "_")}.jpg`, { type: "image/jpeg" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({ files: [file] });
+  } else {
+    // Fallback: open the image in a new tab so the user can save/share it manually
+    window.open(dataUrl, "_blank");
+  }
+}
+
+function shareAsText(title, lines) {
+  const text = [`📅 ${title}`, ...lines, "", "Beth Haknesset Motskin02"].join("\n");
   if (navigator.share) {
     navigator.share({ text }).catch(() => {});
   } else {
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   }
 }
 
@@ -1552,14 +1734,15 @@ export default function App() {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const t = T[lang];
 
+  const handleAdminClick = () => isAdmin ? setIsAdmin(false) : setShowAdminModal(true);
+
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: C.lightGray }}>
       <style>{globalCSS}</style>
-      <Header lang={lang} setLang={setLang} isAdmin={isAdmin} t={t}
-        onAdminClick={() => isAdmin ? setIsAdmin(false) : setShowAdminModal(true)} />
+      <Header lang={lang} setLang={setLang} isAdmin={isAdmin} t={t} onAdminClick={handleAdminClick} />
       {showAdminModal && <AdminModal t={t} onLogin={() => { setIsAdmin(true); setShowAdminModal(false); }} onClose={() => setShowAdminModal(false)} />}
       <div style={{ direction: lang === "he" ? "rtl" : "ltr" }}>
-        <div style={{display: tab === "pensee" ? "block" : "none"}}><PenseeTab isAdmin={isAdmin} t={t} activeTab={tab} lang={lang} /></div>
+        <div style={{display: tab === "pensee" ? "block" : "none"}}><PenseeTab isAdmin={isAdmin} t={t} activeTab={tab} lang={lang} onAdminClick={handleAdminClick} /></div>
         <div style={{display: tab === "programme" ? "block" : "none"}}><ProgrammeTab isAdmin={isAdmin} t={t} activeTab={tab} lang={lang} /></div>
         <div style={{display: tab === "shabbat" ? "block" : "none"}}><ShabbatTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         <div style={{display: tab === "activites" ? "block" : "none"}}><ActivitesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
