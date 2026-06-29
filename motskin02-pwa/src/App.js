@@ -1051,6 +1051,181 @@ async function sharePensee(pensee, customTitle) {
   }
 }
 
+// Generates one combined image for Mini étude: Pensée du jour + Tehilim du jour + Motskin02 logo,
+// with the canvas height growing as needed so nothing is ever cut off.
+async function generateMiniEtudeShareCard(pensee, tehilim) {
+  const W = 800;
+  const PAD = 44;
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  function wrapLines(text, maxWidth) {
+    const paragraphs = String(text).split("\n");
+    const lines = [];
+    paragraphs.forEach(para => {
+      if (para.trim() === "") { lines.push(""); return; }
+      const words = para.split(" ");
+      let line = "";
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + " ";
+        if (ctx.measureText(test).width > maxWidth && line !== "") {
+          lines.push(line.trim());
+          line = words[i] + " ";
+        } else {
+          line = test;
+        }
+      }
+      if (line.trim()) lines.push(line.trim());
+    });
+    return lines;
+  }
+
+  const headerH = 110;
+  const sectionGap = 30;
+  const sepH = 30;
+  const footerH = 70;
+
+  // Pensée content (French, optionally Hebrew)
+  ctx.font = "italic 24px Arial, sans-serif";
+  const penseeFraLines = wrapLines(`« ${pensee.texte} »`, W - PAD * 2);
+  const penseeSourceLines = pensee.source ? wrapLines(`— ${pensee.source}`, W - PAD * 2) : [];
+  let penseeHebLines = [];
+  if (pensee.texteHe) {
+    ctx.font = "26px 'Arial Hebrew', 'Times New Roman', serif";
+    penseeHebLines = wrapLines(`« ${pensee.texteHe} »`, W - PAD * 2 - 20);
+  }
+  const penseeSourceHeLines = pensee.sourceHe ? wrapLines(`— ${pensee.sourceHe}`, W - PAD * 2 - 20) : [];
+
+  // Tehilim content (Hebrew + French)
+  ctx.font = "24px 'Arial Hebrew', 'Times New Roman', serif";
+  const tehilimHebLines = wrapLines(tehilim.hebreu, W - PAD * 2 - 20);
+  ctx.font = "19px Arial, sans-serif";
+  const tehilimFraLines = wrapLines(tehilim.francais, W - PAD * 2);
+
+  const penseeFraLineH = 32;
+  const penseeHebLineH = 36;
+  const tehilimHebLineH = 34;
+  const tehilimFraLineH = 27;
+
+  const penseeBlockH = 50 /* icon+label */ + penseeFraLines.length * penseeFraLineH + penseeSourceLines.length * 28
+    + (penseeHebLines.length ? 20 + penseeHebLines.length * penseeHebLineH : 0) + penseeSourceHeLines.length * 26;
+  const tehilimLabelH = 60;
+  const tehilimBlockH = tehilimLabelH + tehilimHebLines.length * tehilimHebLineH + 20 + tehilimFraLines.length * tehilimFraLineH;
+
+  const H = headerH + 30 + penseeBlockH + sectionGap + sepH + sectionGap + tehilimBlockH + footerH + PAD;
+
+  canvas.width = W;
+  canvas.height = H;
+
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#ffffff");
+  grad.addColorStop(1, "#f0f4f8");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Header band with logo
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillRect(0, 0, W, headerH);
+  const logoImg = await new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = LOGO_SRC;
+  });
+  if (logoImg) {
+    const logoSize = 70;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(PAD + logoSize / 2, headerH / 2, logoSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(logoImg, PAD, headerH / 2 - logoSize / 2, logoSize, logoSize);
+    ctx.restore();
+  }
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px Arial, sans-serif";
+  ctx.fillText("Mini étude du jour", PAD + 88, headerH / 2 + 8);
+
+  let y = headerH + 50;
+
+  // Section 1: Pensée du jour
+  ctx.textAlign = "center";
+  ctx.font = "bold 20px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillText("💭 Pensée du jour", W / 2, y);
+  y += 38;
+
+  ctx.font = "italic 24px Arial, sans-serif";
+  ctx.fillStyle = "#374151";
+  penseeFraLines.forEach(line => { ctx.fillText(line, W / 2, y); y += penseeFraLineH; });
+  if (penseeSourceLines.length) {
+    ctx.font = "bold 18px Arial, sans-serif";
+    ctx.fillStyle = "#3a9cc8";
+    penseeSourceLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 28; });
+  }
+  if (penseeHebLines.length) {
+    y += 20;
+    ctx.font = "26px 'Arial Hebrew', 'Times New Roman', serif";
+    ctx.fillStyle = "#1a2e52";
+    penseeHebLines.forEach(line => { ctx.fillText(line, W / 2, y); y += penseeHebLineH; });
+    if (penseeSourceHeLines.length) {
+      ctx.font = "bold 18px 'Arial Hebrew', 'Times New Roman', serif";
+      ctx.fillStyle = "#3a9cc8";
+      penseeSourceHeLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 26; });
+    }
+  }
+
+  y += sectionGap;
+  ctx.strokeStyle = "#5bbfea55";
+  ctx.beginPath();
+  ctx.moveTo(PAD, y);
+  ctx.lineTo(W - PAD, y);
+  ctx.stroke();
+  y += sectionGap;
+
+  // Section 2: Tehilim du jour
+  ctx.font = "bold 20px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillText(`📜 Tehilim du jour — Psaume ${tehilim.numero}`, W / 2, y);
+  y += 24;
+  ctx.font = "14px Arial, sans-serif";
+  ctx.fillStyle = "#6b7280";
+  ctx.fillText(tehilim.titre, W / 2, y);
+  y += 36;
+
+  ctx.font = "24px 'Arial Hebrew', 'Times New Roman', serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.textAlign = "right";
+  tehilimHebLines.forEach(line => { ctx.fillText(line, W - PAD, y); y += tehilimHebLineH; });
+
+  y += 20;
+  ctx.font = "19px Arial, sans-serif";
+  ctx.fillStyle = "#374151";
+  ctx.textAlign = "left";
+  tehilimFraLines.forEach(line => { ctx.fillText(line, PAD, y); y += tehilimFraLineH; });
+
+  // Footer
+  y = H - 50;
+  ctx.font = "bold 22px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.textAlign = "center";
+  ctx.fillText("🇮🇱 Beth Haknesset Motskin02", W / 2, y);
+
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+async function shareMiniEtude(pensee, tehilim) {
+  try {
+    const cardDataUrl = await generateMiniEtudeShareCard(pensee, tehilim);
+    await shareCardImage(cardDataUrl, "mini-etude-du-jour");
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText("Mini étude du jour", [pensee.texte, "", `Tehilim ${tehilim.numero}`]);
+  }
+}
+
 function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
   const [pensees, setPensees] = useState([]);
   const [showManage, setShowManage] = useState(false);
@@ -1145,13 +1320,6 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
         <div style={{ fontSize: 13, lineHeight: 1.6, color: C.gray }}>
           {todayTehilim.francais}
         </div>
-
-        <button
-          onClick={() => sharePensee({ texte: todayTehilim.hebreu, source: todayTehilim.francais, texteHe: "", sourceHe: "" }, `📜 Tehilim ${todayTehilim.numero} — ${todayTehilim.titre}`)}
-          style={{ width: "100%", marginTop: 14, padding: 10, background: "#25D366", color: "#fff", borderRadius: 8, fontWeight: 700, fontSize: 13, border: "none" }}
-        >
-          💬 {t.partager}
-        </button>
       </div>
 
       {isAdmin && (
@@ -1161,7 +1329,7 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
       )}
 
       <button
-        onClick={() => sharePensee(todayPensee)}
+        onClick={() => shareMiniEtude(todayPensee, todayTehilim)}
         style={{ width: "100%", padding: 12, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
       >
         💬 {t.partager}
@@ -1266,15 +1434,51 @@ const DEFAULT_DAY_EVENTS = {
 // title, time/place info, and the synagogue logo — styled like a label/poster.
 async function generateShareCard({ title, lines, photoData }) {
   const W = 800;
+  const PAD = 40;
   const hasPhoto = !!photoData;
   const photoH = hasPhoto ? 420 : 0;
-  const textBlockH = 60 + lines.length * 44 + 90; // title + info lines + footer
-  const H = photoH + textBlockH;
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
-  canvas.height = H;
   const ctx = canvas.getContext("2d");
+
+  // Wrap a block of text into multiple lines that fit maxWidth, respecting existing line breaks
+  function wrapBlock(text, maxWidth) {
+    const paragraphs = String(text).split("\n");
+    const out = [];
+    paragraphs.forEach(para => {
+      if (para.trim() === "") { out.push(""); return; }
+      const words = para.split(" ");
+      let line = "";
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + " ";
+        if (ctx.measureText(test).width > maxWidth && line !== "") {
+          out.push(line.trim());
+          line = words[i] + " ";
+        } else {
+          line = test;
+        }
+      }
+      if (line.trim()) out.push(line.trim());
+    });
+    return out;
+  }
+
+  // Pre-measure: title wrap
+  ctx.font = "bold 38px Arial, sans-serif";
+  const titleLines = wrapBlock(title, W - 80);
+
+  // Pre-measure: each info line individually wrapped (these may be long Hebrew/French paragraphs)
+  ctx.font = "28px Arial, sans-serif";
+  const wrappedLineGroups = lines.map(line => wrapBlock(line, W - PAD * 2));
+  const totalInfoLines = wrappedLineGroups.reduce((sum, group) => sum + group.length, 0);
+
+  const titleBlockH = 64 + titleLines.length * 46;
+  const infoBlockH = totalInfoLines * 44;
+  const footerH = 90;
+  const H = photoH + titleBlockH + infoBlockH + footerH;
+
+  canvas.height = H;
 
   // Background gradient (navy to sky blue, matching the app's identity)
   const grad = ctx.createLinearGradient(0, 0, W, H);
@@ -1310,15 +1514,19 @@ async function generateShareCard({ title, lines, photoData }) {
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 38px Arial, sans-serif";
   y += 64;
-  wrapText(ctx, title, W / 2, y, W - 80, 46);
-  y += (countWrappedLines(ctx, title, W - 80) - 1) * 46;
+  titleLines.forEach((line, i) => {
+    ctx.fillText(line, W / 2, y + i * 46);
+  });
+  y += (titleLines.length - 1) * 46;
 
-  // Info lines (time, place, etc.)
+  // Info lines (time, place, etc.) — each wrapped individually so nothing overflows
   ctx.font = "28px Arial, sans-serif";
   ctx.fillStyle = "#dceefb";
-  lines.forEach(line => {
-    y += 44;
-    ctx.fillText(line, W / 2, y);
+  wrappedLineGroups.forEach(group => {
+    group.forEach(wline => {
+      y += 44;
+      ctx.fillText(wline, W / 2, y);
+    });
   });
 
   // Footer with logo + synagogue name
@@ -2048,18 +2256,20 @@ function FormatSelector({ onSelect }) {
 async function generatePriereShareCard(priere) {
   const W = 800;
   const PAD = 44;
-  // No truncation: the canvas height grows to fit the full text, however long.
+  const MAX_SAFE_HEIGHT = 8000; // stays well within mobile browser canvas limits
+  // No truncation: every word of the prayer is kept; font size adapts so very long
+  // prayers (e.g. Birkat HaMazon) still fit within a safely renderable canvas height.
   const hebFull = priere.hebreu;
   const fraFull = priere.francais;
 
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  // Wrap text respecting explicit line breaks already present (e.g. Birkat HaMazon paragraphs)
+  // Wrap text respecting existing paragraph breaks (e.g. Birkat HaMazon's blessing breaks)
   function wrapLines(text, maxWidth) {
     const paragraphs = text.split("\n");
     const lines = [];
-    paragraphs.forEach((para, idx) => {
+    paragraphs.forEach(para => {
       if (para.trim() === "") { lines.push(""); return; }
       const words = para.split(" ");
       let line = "";
@@ -2077,17 +2287,43 @@ async function generatePriereShareCard(priere) {
     return lines;
   }
 
-  ctx.font = "italic 24px Arial, sans-serif";
-  const fraLines = wrapLines(fraFull, W - PAD * 2);
-  ctx.font = "30px Arial, sans-serif";
-  const hebLines = wrapLines(hebFull, W - PAD * 2);
-
   const headerH = 150;
-  const hebLineH = 42;
-  const fraLineH = 34;
   const sepH = 30;
   const footerH = 70;
-  const H = headerH + hebLines.length * hebLineH + sepH + fraLines.length * fraLineH + footerH + PAD;
+
+  // Try progressively smaller font sizes until the full text fits within MAX_SAFE_HEIGHT
+  const sizeSteps = [
+    { heb: 30, hebLineH: 42, fra: 24, fraLineH: 34 },
+    { heb: 24, hebLineH: 34, fra: 19, fraLineH: 27 },
+    { heb: 19, hebLineH: 27, fra: 15, fraLineH: 21 },
+    { heb: 15, hebLineH: 21, fra: 12, fraLineH: 17 },
+    { heb: 12, hebLineH: 17, fra: 10, fraLineH: 14 },
+  ];
+
+  let chosen = sizeSteps[sizeSteps.length - 1];
+  let hebLines, fraLines, H;
+  for (const step of sizeSteps) {
+    ctx.font = `italic ${step.fra}px Arial, sans-serif`;
+    const tryFraLines = wrapLines(fraFull, W - PAD * 2);
+    ctx.font = `${step.heb}px 'Arial Hebrew', 'Times New Roman', serif`;
+    const tryHebLines = wrapLines(hebFull, W - PAD * 2 - 20);
+    const tryH = headerH + tryHebLines.length * step.hebLineH + sepH + tryFraLines.length * step.fraLineH + footerH + PAD;
+    if (tryH <= MAX_SAFE_HEIGHT) {
+      chosen = step;
+      hebLines = tryHebLines;
+      fraLines = tryFraLines;
+      H = tryH;
+      break;
+    }
+    // keep the smallest as fallback in case nothing fits (extremely long text)
+    chosen = step;
+    hebLines = tryHebLines;
+    fraLines = tryFraLines;
+    H = tryH;
+  }
+
+  const hebLineH = chosen.hebLineH;
+  const fraLineH = chosen.fraLineH;
 
   canvas.width = W;
   canvas.height = H;
@@ -2126,11 +2362,18 @@ async function generatePriereShareCard(priere) {
   ctx.font = "bold 30px Arial, sans-serif";
   ctx.fillText(priere.titre, PAD + 104, headerH / 2 - 6);
   if (priere.titreHebreu) {
-    ctx.font = "26px Arial, sans-serif";
+    ctx.font = "26px 'Arial Hebrew', 'Times New Roman', serif";
     ctx.fillStyle = "#a8ddf4";
     // RTL draw: align right edge manually since canvas RTL support is inconsistent
     ctx.textAlign = "right";
-    ctx.fillText(priere.titreHebreu, W - PAD, headerH / 2 - 6);
+    const availableW = W - PAD - (PAD + 104 + ctx.measureText(priere.titre).width);
+    let hebTitle = priere.titreHebreu;
+    ctx.font = "bold 30px Arial, sans-serif"; // measure against title width isn't needed; just cap width directly
+    ctx.font = "26px 'Arial Hebrew', 'Times New Roman', serif";
+    while (ctx.measureText(hebTitle).width > W - PAD * 2 - 110 && hebTitle.length > 4) {
+      hebTitle = hebTitle.slice(0, -1);
+    }
+    ctx.fillText(hebTitle, W - PAD, headerH / 2 - 6);
     ctx.textAlign = "left";
   }
   ctx.font = "16px Arial, sans-serif";
@@ -2140,7 +2383,7 @@ async function generatePriereShareCard(priere) {
   y = headerH + 36;
 
   // Hebrew block (right-aligned, RTL feel)
-  ctx.font = "30px Arial, sans-serif";
+  ctx.font = `${chosen.heb}px 'Arial Hebrew', 'Times New Roman', serif`;
   ctx.fillStyle = "#1a2e52";
   ctx.textAlign = "right";
   hebLines.forEach(line => {
@@ -2157,7 +2400,7 @@ async function generatePriereShareCard(priere) {
   y += sepH / 2 + 14;
 
   // French block (left-aligned)
-  ctx.font = "italic 24px Arial, sans-serif";
+  ctx.font = `italic ${chosen.fra}px Arial, sans-serif`;
   ctx.fillStyle = "#374151";
   ctx.textAlign = "left";
   fraLines.forEach(line => {
