@@ -2002,7 +2002,7 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
             const minhaDocCopy = data.find(d => d.type === "minha_override");
             const extrasDocsCopy = Object.keys(extras).flatMap(wId =>
               Object.keys(extras[wId]).map(jk => ({
-                ...extras[wId][jk], id: \`extras_\${wId}_\${jk}\`, type: "day_extras", jour: jk, semaine: wId,
+                ...extras[wId][jk], id: "extras_" + wId + "_" + jk, type: "day_extras", jour: jk, semaine: wId,
               }))
             );
             await saveData(KEYS.programme, [
