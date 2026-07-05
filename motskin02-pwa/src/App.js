@@ -601,8 +601,17 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
 
   async function save() {
     const isNew = !editing;
-    const entry = { ...form, id: editing || Date.now().toString(), minhaBefore: addMinutes(form.entree, -5, true), minhaAfternoon: addMinutes(form.sortie, -90, true), arvit: addMinutes(form.sortie, -10, true) };
-    const updated = editing ? events.map(e => e.id === editing ? entry : e) : [entry, ...events];
+    const base = { ...form, minhaBefore: addMinutes(form.entree, -5, true), minhaAfternoon: addMinutes(form.sortie, -90, true), arvit: addMinutes(form.sortie, -10, true) };
+    let updated;
+    if (editing) {
+      const entry = { ...base, id: editing };
+      updated = events.map(e => e.id === editing ? entry : e);
+    } else {
+      // Nouvel événement : _order=0 pour être en tête, on décale les autres
+      const entry = { ...base, id: Date.now().toString(), _order: 0 };
+      const shifted = events.map((e, i) => ({ ...e, _order: i + 1 }));
+      updated = [entry, ...shifted];
+    }
     setEvents(updated);
     await saveData(KEYS.shabbatEvents, updated);
     setShowForm(false);
@@ -1576,7 +1585,6 @@ async function generateShabbatShareCard(ev, t, nextShabbat) {
     rows.push({ label: `🕯️ ${t.allumage}`, value: formatTime(nextShabbat.candle) });
     if (nextShabbat.havdalah) rows.push({ label: "✨ Havdala", value: formatTime(nextShabbat.havdalah) });
   }
-  rows.push({ label: `🕯️ ${t.allumage}`, value: ev.entree });
   rows.push({ label: `🙏 ${t.minhaBefore}`, value: ev.minhaBefore });
   if (ev.showChiourBefore && ev.chiourBeforeText) rows.push({ label: "📚 Chiour", value: ev.chiourBeforeText });
   rows.push({ label: `☀️ ${t.chakharit}`, value: ev.chakharit });
@@ -1964,7 +1972,41 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
       events.forEach(e => { if (e.semaine) weeksWithData.add(e.semaine); });
       Object.keys(extras).forEach(w => weeksWithData.add(w));
       const sorted = Array.from(weeksWithData).sort((a, b) => b.localeCompare(a));
-      setWeekIds(sorted);
+
+      // Auto-copie : si la semaine en cours n'a pas encore d'événements personnalisés,
+      // on duplique automatiquement tous les événements de la semaine précédente
+      // (avec leurs photos, descriptions, horaires, etc.)
+      const currentWeekEvents = events.filter(e => e.semaine === currentId && e.type === "event" && !e.deleted);
+      if (currentWeekEvents.length === 0) {
+        const prevWeekId = sorted.find(w => w < currentId);
+        if (prevWeekId) {
+          const prevEvents = events.filter(e => e.semaine === prevWeekId && e.type === "event" && !e.deleted);
+          if (prevEvents.length > 0) {
+            const copied = prevEvents.map(e => ({
+              ...e,
+              id: \`copy_\${currentId}_\${e.id}\`,
+              semaine: currentId,
+            }));
+            const allUpdated = [...events, ...copied];
+            setAllEvents(allUpdated);
+            // Persistance immédiate des copies dans Firebase
+            const minhaDocCopy = data.find(d => d.type === "minha_override");
+            const extrasDocsCopy = Object.keys(extras).flatMap(wId =>
+              Object.keys(extras[wId]).map(jk => ({
+                ...extras[wId][jk], id: \`extras_\${wId}_\${jk}\`, type: "day_extras", jour: jk, semaine: wId,
+              }))
+            );
+            await saveData(KEYS.programme, [
+              ...allUpdated,
+              ...(minhaDocCopy ? [minhaDocCopy] : []),
+              ...extrasDocsCopy,
+            ]);
+            weeksWithData.add(currentId);
+          }
+        }
+      }
+
+      setWeekIds(Array.from(weeksWithData).sort((a, b) => b.localeCompare(a)));
     });
   }, [activeTab]);
 
