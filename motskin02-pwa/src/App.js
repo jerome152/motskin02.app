@@ -629,13 +629,16 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
     await saveData(KEYS.shabbatEvents, updated);
   }
 
-  async function moveEv(idx, dir) {
+  async function moveEv(evId, dir) {
     const arr = [...events];
+    const idx = arr.findIndex(e => e.id === evId);
+    if (idx < 0) return;
     const to = idx + dir;
     if (to < 0 || to >= arr.length) return;
     [arr[idx], arr[to]] = [arr[to], arr[idx]];
-    setEvents(arr);
-    await saveData(KEYS.shabbatEvents, arr);
+    const withOrder = arr.map((e, i) => ({ ...e, _order: i }));
+    setEvents(withOrder);
+    await saveData(KEYS.shabbatEvents, withOrder);
   }
 
   return (
@@ -660,7 +663,7 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
                 </span>
                 <div style={{ fontWeight: 800, fontSize: 18, color: C.navy, marginTop: 6 }}>{ev.nom}</div>
               </div>
-              {isAdmin && <AdminBtns onUp={() => moveEv(idx, -1)} onDown={() => moveEv(idx, 1)} onEdit={() => openEdit(ev)} onDelete={() => del(ev.id)} t={t} />}
+              {isAdmin && <AdminBtns onUp={() => moveEv(ev.id, -1)} onDown={() => moveEv(ev.id, 1)} onEdit={() => openEdit(ev)} onDelete={() => del(ev.id)} t={t} />}
             </div>
             <Row label={`🕯️ ${t.allumage}`} value={ev.entree} />
             <Row label={`🙏 ${t.minhaBefore}`} value={ev.minhaBefore} />
