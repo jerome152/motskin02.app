@@ -629,6 +629,15 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
     await saveData(KEYS.shabbatEvents, updated);
   }
 
+  async function moveEv(idx, dir) {
+    const arr = [...events];
+    const to = idx + dir;
+    if (to < 0 || to >= arr.length) return;
+    [arr[idx], arr[to]] = [arr[to], arr[idx]];
+    setEvents(arr);
+    await saveData(KEYS.shabbatEvents, arr);
+  }
+
   return (
     <div style={{ padding: "14px 12px 80px" }}>
       {nextShabbat && (
@@ -651,7 +660,7 @@ function ShabbatTab({ isAdmin, t, activeTab }) {
                 </span>
                 <div style={{ fontWeight: 800, fontSize: 18, color: C.navy, marginTop: 6 }}>{ev.nom}</div>
               </div>
-              {isAdmin && <AdminBtns onEdit={() => openEdit(ev)} onDelete={() => del(ev.id)} t={t} />}
+              {isAdmin && <AdminBtns onUp={() => moveEv(idx, -1)} onDown={() => moveEv(idx, 1)} onEdit={() => openEdit(ev)} onDelete={() => del(ev.id)} t={t} />}
             </div>
             <Row label={`🕯️ ${t.allumage}`} value={ev.entree} />
             <Row label={`🙏 ${t.minhaBefore}`} value={ev.minhaBefore} />
@@ -1984,7 +1993,7 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
           if (prevEvents.length > 0) {
             const copied = prevEvents.map(e => ({
               ...e,
-              id: \`copy_\${currentId}_\${e.id}\`,
+              id: "copy_" + currentId + "_" + e.id,
               semaine: currentId,
             }));
             const allUpdated = [...events, ...copied];
