@@ -1964,7 +1964,7 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
 
   useEffect(() => {
     fetchSunset();
-    loadData(KEYS.programme).then(data => {
+    loadData(KEYS.programme).then(async data => {
       const events = data.filter(d => d.type === "event");
       setAllEvents(events);
       const minhaDoc = data.find(d => d.type === "minha_override");
