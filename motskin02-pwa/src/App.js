@@ -382,7 +382,6 @@ function TabBar({ tab, setTab, t, lang }) {
     { key: "pensee", icon: "💭", label: lang === "he" ? t.miniEtude : "Mini étude" },
     { key: "programme", icon: "📋", label: t.programme },
     { key: "shabbat", icon: "🇮🇱", label: t.shabbatFetes },
-    { key: "activites", icon: "📅", label: t.activites },
     { key: "annonces", icon: "📢", label: t.annonces },
     { key: "boiteaoutils", icon: "📔", label: lang === "he" ? "סידור" : "Sidour" },
     { key: "location", icon: "🏛️", label: t.location },
@@ -1074,9 +1073,11 @@ async function sharePensee(pensee, customTitle) {
 
 // Generates one combined image for Mini étude: Pensée du jour + Tehilim du jour + Motskin02 logo,
 // with the canvas height growing as needed so nothing is ever cut off.
-async function generateMiniEtudeShareCard(pensee, tehilim) {
+async function generateMiniEtudeShareCard(pensee, tehilim, parachaSummary, parachaName, dayOfWeek) {
   const W = 800;
   const PAD = 44;
+  const aliyahNames = ["Rishon","Cheni","Chelishi","Revi'i","Hamichi","Chichi","Chevi'i"];
+  const aliyah = aliyahNames[dayOfWeek ?? 0] || aliyahNames[0];
 
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -1103,38 +1104,40 @@ async function generateMiniEtudeShareCard(pensee, tehilim) {
   }
 
   const headerH = 110;
-  const sectionGap = 30;
-  const sepH = 30;
+  const sectionGap = 24;
+  const sepH = 24;
   const footerH = 70;
 
-  // Pensée content (French, optionally Hebrew)
-  ctx.font = "italic 24px Arial, sans-serif";
-  const penseeFraLines = wrapLines(`« ${pensee.texte} »`, W - PAD * 2);
-  const penseeSourceLines = pensee.source ? wrapLines(`— ${pensee.source}`, W - PAD * 2) : [];
+  // Section 1: Paracha summary
+  ctx.font = "22px Arial, sans-serif";
+  const parachaLines = parachaSummary ? wrapLines(parachaSummary, W - PAD * 2) : [];
+  const parachaSectionH = parachaSummary ? (50 + parachaLines.length * 30) : 0;
+
+  // Section 2: Pensée (French + optionally Hebrew)
+  ctx.font = "italic 22px Arial, sans-serif";
+  const penseeFraLines = wrapLines("« " + pensee.texte + " »", W - PAD * 2);
+  const penseeSourceLines = pensee.source ? wrapLines("— " + pensee.source, W - PAD * 2) : [];
   let penseeHebLines = [];
   if (pensee.texteHe) {
-    ctx.font = "26px 'Arial Hebrew', 'Times New Roman', serif";
-    penseeHebLines = wrapLines(`« ${pensee.texteHe} »`, W - PAD * 2 - 20);
+    ctx.font = "24px 'Arial Hebrew', serif";
+    penseeHebLines = wrapLines("« " + pensee.texteHe + " »", W - PAD * 2 - 20);
   }
-  const penseeSourceHeLines = pensee.sourceHe ? wrapLines(`— ${pensee.sourceHe}`, W - PAD * 2 - 20) : [];
+  const penseeSourceHeLines = pensee.sourceHe ? wrapLines("— " + pensee.sourceHe, W - PAD * 2 - 20) : [];
+  const penseeBlockH = 50 + penseeFraLines.length * 30 + penseeSourceLines.length * 26
+    + (penseeHebLines.length ? 20 + penseeHebLines.length * 34 : 0) + penseeSourceHeLines.length * 24;
 
-  // Tehilim content (Hebrew + French)
-  ctx.font = "24px 'Arial Hebrew', 'Times New Roman', serif";
+  // Section 3: Tehilim
+  ctx.font = "22px 'Arial Hebrew', serif";
   const tehilimHebLines = wrapLines(tehilim.hebreu, W - PAD * 2 - 20);
-  ctx.font = "19px Arial, sans-serif";
+  ctx.font = "18px Arial, sans-serif";
   const tehilimFraLines = wrapLines(tehilim.francais, W - PAD * 2);
+  const tehilimBlockH = 60 + tehilimHebLines.length * 32 + 20 + tehilimFraLines.length * 25;
 
-  const penseeFraLineH = 32;
-  const penseeHebLineH = 36;
-  const tehilimHebLineH = 34;
-  const tehilimFraLineH = 27;
-
-  const penseeBlockH = 50 /* icon+label */ + penseeFraLines.length * penseeFraLineH + penseeSourceLines.length * 28
-    + (penseeHebLines.length ? 20 + penseeHebLines.length * penseeHebLineH : 0) + penseeSourceHeLines.length * 26;
-  const tehilimLabelH = 60;
-  const tehilimBlockH = tehilimLabelH + tehilimHebLines.length * tehilimHebLineH + 20 + tehilimFraLines.length * tehilimFraLineH;
-
-  const H = headerH + 30 + penseeBlockH + sectionGap + sepH + sectionGap + tehilimBlockH + footerH + PAD;
+  const seps = parachaSummary ? 2 : 1; // number of separators
+  const H = headerH + 30
+    + (parachaSummary ? parachaSectionH + sectionGap + sepH + sectionGap : 0)
+    + penseeBlockH + sectionGap + sepH + sectionGap
+    + tehilimBlockH + footerH + PAD;
 
   canvas.width = W;
   canvas.height = H;
@@ -1166,70 +1169,81 @@ async function generateMiniEtudeShareCard(pensee, tehilim) {
   }
   ctx.textAlign = "left";
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 26px Arial, sans-serif";
+  ctx.font = "bold 24px Arial, sans-serif";
   ctx.fillText("Mini étude du jour", PAD + 88, headerH / 2 + 8);
 
   let y = headerH + 50;
 
-  // Section 1: Pensée du jour
-  ctx.textAlign = "center";
-  ctx.font = "bold 20px Arial, sans-serif";
-  ctx.fillStyle = "#1a2e52";
-  ctx.fillText("💭 Pensée du jour", W / 2, y);
-  y += 38;
-
-  ctx.font = "italic 24px Arial, sans-serif";
-  ctx.fillStyle = "#374151";
-  penseeFraLines.forEach(line => { ctx.fillText(line, W / 2, y); y += penseeFraLineH; });
-  if (penseeSourceLines.length) {
+  // ── Section 1: Torah du jour (Paracha)
+  if (parachaSummary) {
+    ctx.textAlign = "center";
     ctx.font = "bold 18px Arial, sans-serif";
-    ctx.fillStyle = "#3a9cc8";
-    penseeSourceLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 28; });
-  }
-  if (penseeHebLines.length) {
-    y += 20;
-    ctx.font = "26px 'Arial Hebrew', 'Times New Roman', serif";
     ctx.fillStyle = "#1a2e52";
-    penseeHebLines.forEach(line => { ctx.fillText(line, W / 2, y); y += penseeHebLineH; });
-    if (penseeSourceHeLines.length) {
-      ctx.font = "bold 18px 'Arial Hebrew', 'Times New Roman', serif";
-      ctx.fillStyle = "#3a9cc8";
-      penseeSourceHeLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 26; });
-    }
+    ctx.fillText("📖 Torah du jour" + (parachaName ? " — " + parachaName + " · " + aliyah : ""), W / 2, y);
+    y += 36;
+    ctx.font = "22px Arial, sans-serif";
+    ctx.fillStyle = "#374151";
+    parachaLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 30; });
+    y += sectionGap;
+    ctx.strokeStyle = "#5bbfea55";
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    y += sectionGap;
   }
+
+  // ── Section 2: Tehilim du jour
+  ctx.textAlign = "center";
+  ctx.font = "bold 18px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillText("📜 Tehilim du jour — Psaume " + tehilim.numero, W / 2, y);
+  y += 22;
+  ctx.font = "13px Arial, sans-serif";
+  ctx.fillStyle = "#6b7280";
+  ctx.fillText(tehilim.titre, W / 2, y);
+  y += 34;
+  ctx.font = "22px 'Arial Hebrew', serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.textAlign = "right";
+  tehilimHebLines.forEach(line => { ctx.fillText(line, W - PAD, y); y += 32; });
+  y += 20;
+  ctx.font = "18px Arial, sans-serif";
+  ctx.fillStyle = "#374151";
+  ctx.textAlign = "left";
+  tehilimFraLines.forEach(line => { ctx.fillText(line, PAD, y); y += 25; });
 
   y += sectionGap;
   ctx.strokeStyle = "#5bbfea55";
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  ctx.lineTo(W - PAD, y);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
   y += sectionGap;
 
-  // Section 2: Tehilim du jour
-  ctx.font = "bold 20px Arial, sans-serif";
+  // ── Section 3: Pensée du jour
+  ctx.textAlign = "center";
+  ctx.font = "bold 18px Arial, sans-serif";
   ctx.fillStyle = "#1a2e52";
-  ctx.fillText(`📜 Tehilim du jour — Psaume ${tehilim.numero}`, W / 2, y);
-  y += 24;
-  ctx.font = "14px Arial, sans-serif";
-  ctx.fillStyle = "#6b7280";
-  ctx.fillText(tehilim.titre, W / 2, y);
+  ctx.fillText("💭 Pensée du jour", W / 2, y);
   y += 36;
-
-  ctx.font = "24px 'Arial Hebrew', 'Times New Roman', serif";
-  ctx.fillStyle = "#1a2e52";
-  ctx.textAlign = "right";
-  tehilimHebLines.forEach(line => { ctx.fillText(line, W - PAD, y); y += tehilimHebLineH; });
-
-  y += 20;
-  ctx.font = "19px Arial, sans-serif";
+  ctx.font = "italic 22px Arial, sans-serif";
   ctx.fillStyle = "#374151";
-  ctx.textAlign = "left";
-  tehilimFraLines.forEach(line => { ctx.fillText(line, PAD, y); y += tehilimFraLineH; });
+  penseeFraLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 30; });
+  if (penseeSourceLines.length) {
+    ctx.font = "bold 16px Arial, sans-serif";
+    ctx.fillStyle = "#3a9cc8";
+    penseeSourceLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 26; });
+  }
+  if (penseeHebLines.length) {
+    y += 20;
+    ctx.font = "24px 'Arial Hebrew', serif";
+    ctx.fillStyle = "#1a2e52";
+    penseeHebLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 34; });
+    if (penseeSourceHeLines.length) {
+      ctx.font = "bold 16px 'Arial Hebrew', serif";
+      ctx.fillStyle = "#3a9cc8";
+      penseeSourceHeLines.forEach(line => { ctx.fillText(line, W / 2, y); y += 24; });
+    }
+  }
 
   // Footer
   y = H - 50;
-  ctx.font = "bold 22px Arial, sans-serif";
+  ctx.font = "bold 20px Arial, sans-serif";
   ctx.fillStyle = "#1a2e52";
   ctx.textAlign = "center";
   ctx.fillText("🇮🇱 Beth Haknesset Motskin02", W / 2, y);
@@ -1237,13 +1251,13 @@ async function generateMiniEtudeShareCard(pensee, tehilim) {
   return canvas.toDataURL("image/jpeg", 0.9);
 }
 
-async function shareMiniEtude(pensee, tehilim) {
+async function shareMiniEtude(pensee, tehilim, paracha) {
   try {
-    const cardDataUrl = await generateMiniEtudeShareCard(pensee, tehilim);
+    const cardDataUrl = await generateMiniEtudeShareCard(pensee, tehilim, paracha?.summary || "", paracha?.name || "", paracha?.aliyah || "");
     await shareCardImage(cardDataUrl, "mini-etude-du-jour");
   } catch (e) {
     console.error("Share card error:", e);
-    shareAsText("Mini étude du jour", [pensee.texte, "", `Tehilim ${tehilim.numero}`]);
+    shareAsText("Mini étude du jour", [pensee.texte, "", "Tehilim " + tehilim.numero]);
   }
 }
 
@@ -1252,18 +1266,53 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
   const [showManage, setShowManage] = useState(false);
   const [form, setForm] = useState({ texte: "", source: "", texteHe: "", sourceHe: "" });
   const [hebrewDate, setHebrewDate] = useState("");
+  const [parachaName, setParachaName] = useState("");
+  const [parachaSummary, setParachaSummary] = useState("");
+  const [parachaSummaryLoading, setParachaSummaryLoading] = useState(false);
+
+  const dayOfWeek = new Date().getDay(); // 0=Dimanche … 6=Samedi
+  const aliyahNames = ["Rishon","Cheni","Chelishi","Revi\'i","Hamichi","Chichi","Chevi\'i"];
 
   useEffect(() => {
     loadData(KEYS.pensees).then(setPensees);
     fetchHebrewDate(new Date()).then(setHebrewDate);
+    fetchParachaAndSummary();
   }, [activeTab]);
 
-  // Combine admin-added pensees with default ones for a richer rotation
+  async function fetchParachaAndSummary() {
+    try {
+      const r = await fetch(HEBCAL_API);
+      const j = await r.json();
+      const parashaItem = j.items?.find(i => i.category === "parashat");
+      if (!parashaItem) return;
+      const name = parashaItem.title?.replace("Parashat ", "").replace("Parasha ", "") || "";
+      setParachaName(name);
+
+      const cacheKey = "paracha_summary_" + name + "_" + dayOfWeek;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) { setParachaSummary(cached); return; }
+
+      setParachaSummaryLoading(true);
+      const resp = await fetch("/.netlify/functions/generate-paracha-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paracha: name, dayOfWeek }),
+      });
+      const data = await resp.json();
+      if (data.summary) {
+        setParachaSummary(data.summary);
+        localStorage.setItem(cacheKey, data.summary);
+      }
+    } catch (e) {
+      console.error("Paracha summary error:", e);
+    } finally {
+      setParachaSummaryLoading(false);
+    }
+  }
+
   const allPensees = [...DEFAULT_PENSEES, ...pensees];
   const todayIndex = getDayIndex() % allPensees.length;
   const todayPensee = allPensees[todayIndex];
-
-  // Daily psalm: independent rotation so it doesn't always change in sync with the quote
   const tehilimIndex = (getDayIndex() + 2) % TEHILIM_JOUR.length;
   const todayTehilim = TEHILIM_JOUR[tehilimIndex];
 
@@ -1288,29 +1337,66 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
 
   return (
     <div style={{ padding: "20px 16px 80px" }}>
+      {/* En-tête date */}
+      <div style={{ textAlign: "center", marginBottom: 16, fontSize: 12, color: C.gray, textTransform: "capitalize" }}>
+        {dateStrFr} {hebrewDate && <span dir="rtl">• {hebrewDate}</span>}
+      </div>
+
+      {/* BLOC 1 : Résumé de la paracha du jour */}
+      <div style={{ background: C.white, borderRadius: 18, padding: "20px 18px", marginBottom: 16, boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <span style={{ fontSize: 22 }}>📖</span>
+          <div>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 14 }}>Torah du jour</div>
+            {parachaName && <div style={{ fontSize: 11, color: C.gray }}>Paracha {parachaName} — {aliyahNames[dayOfWeek]}</div>}
+          </div>
+        </div>
+        {parachaSummaryLoading && <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Chargement du résumé…</div>}
+        {!parachaSummaryLoading && parachaSummary && (
+          <div style={{ fontSize: 14, lineHeight: 1.7, color: C.text }}>
+            {parachaSummary.split("\n").filter(Boolean).map((line, i) => (
+              <p key={i} style={{ marginBottom: 6 }}>{line}</p>
+            ))}
+          </div>
+        )}
+        {!parachaSummaryLoading && !parachaSummary && (
+          <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Résumé non disponible pour le moment.</div>
+        )}
+      </div>
+
+      {/* BLOC 2 : Tehilim du jour */}
+      <div style={{ background: C.white, borderRadius: 18, padding: "20px 18px", marginBottom: 16, boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{ fontSize: 22 }}>📜</span>
+          <div>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 14 }}>Tehilim du jour</div>
+            <div style={{ fontSize: 11, color: C.gray }}>Psaume {todayTehilim.numero} — {todayTehilim.titre}</div>
+          </div>
+        </div>
+        <div dir="rtl" style={{ fontSize: 16, lineHeight: 1.8, color: C.text, marginBottom: 12, fontFamily: "serif" }}>
+          {todayTehilim.hebreu}
+        </div>
+        <div style={{ height: 1, background: C.lightGray, margin: "12px 0" }} />
+        <div style={{ fontSize: 13, lineHeight: 1.6, color: C.gray }}>{todayTehilim.francais}</div>
+      </div>
+
+      {/* BLOC 3 : Pensée du jour */}
       <div style={{
         background: `linear-gradient(150deg, ${C.navy} 0%, #2a4a7c 60%, ${C.skyBlue} 130%)`,
-        borderRadius: 20, padding: "32px 24px", marginBottom: 20,
-        boxShadow: "0 6px 24px rgba(26,46,82,0.35)", textAlign: "center", position: "relative", overflow: "hidden",
+        borderRadius: 20, padding: "28px 22px", marginBottom: 20,
+        boxShadow: "0 6px 24px rgba(26,46,82,0.35)", textAlign: "center",
       }}>
-        <div style={{ fontSize: 12, color: C.skyBlueLight, textTransform: "capitalize", marginBottom: 18, letterSpacing: 0.5 }}>
-          {dateStrFr} {hebrewDate && <span dir="rtl">• {hebrewDate}</span>}
-        </div>
-        <div style={{ fontSize: 34, marginBottom: 16 }}>💭</div>
-
-        {/* French */}
-        <p style={{ color: C.white, fontSize: 18, lineHeight: 1.6, fontWeight: 500, marginBottom: 6, fontStyle: "italic" }}>
+        <div style={{ fontSize: 28, marginBottom: 12 }}>💭</div>
+        <p style={{ color: C.white, fontSize: 17, lineHeight: 1.6, fontWeight: 500, marginBottom: 6, fontStyle: "italic" }}>
           « {todayPensee.texte} »
         </p>
         {todayPensee.source && (
-          <div style={{ color: C.skyBlueLight, fontSize: 12, fontWeight: 600, marginBottom: 18 }}>— {todayPensee.source}</div>
+          <div style={{ color: C.skyBlueLight, fontSize: 12, fontWeight: 600, marginBottom: 16 }}>— {todayPensee.source}</div>
         )}
-
         {todayPensee.texteHe && (
           <>
-            <div style={{ height: 1, background: "rgba(255,255,255,0.25)", margin: "0 30px 18px" }} />
-            {/* Hebrew */}
-            <p dir="rtl" style={{ color: C.white, fontSize: 19, lineHeight: 1.8, fontWeight: 500, marginBottom: 6 }}>
+            <div style={{ height: 1, background: "rgba(255,255,255,0.25)", margin: "0 30px 16px" }} />
+            <p dir="rtl" style={{ color: C.white, fontSize: 18, lineHeight: 1.8, fontWeight: 500, marginBottom: 6 }}>
               « {todayPensee.texteHe} »
             </p>
             {todayPensee.sourceHe && (
@@ -1320,29 +1406,6 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
         )}
       </div>
 
-      <div style={{
-        background: C.white, borderRadius: 18, padding: "22px 20px", marginBottom: 20,
-        boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33`,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <span style={{ fontSize: 22 }}>📜</span>
-          <div>
-            <div style={{ fontWeight: 700, color: C.navy, fontSize: 14 }}>Tehilim du jour</div>
-            <div style={{ fontSize: 11, color: C.gray }}>Psaume {todayTehilim.numero} — {todayTehilim.titre}</div>
-          </div>
-        </div>
-
-        <div dir="rtl" style={{ fontSize: 16, lineHeight: 1.8, color: C.text, marginBottom: 12, fontFamily: "serif" }}>
-          {todayTehilim.hebreu}
-        </div>
-
-        <div style={{ height: 1, background: C.lightGray, margin: "12px 0" }} />
-
-        <div style={{ fontSize: 13, lineHeight: 1.6, color: C.gray }}>
-          {todayTehilim.francais}
-        </div>
-      </div>
-
       {isAdmin && (
         <button onClick={() => setShowManage(true)} style={{ width: "100%", padding: 12, background: C.lightGray, color: C.navy, borderRadius: 10, fontWeight: 600, fontSize: 14, border: `1px solid ${C.skyBlue}55`, marginBottom: 12 }}>
           ⚙️ {t.gererPensees}
@@ -1350,18 +1413,15 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
       )}
 
       <button
-        onClick={() => shareMiniEtude(todayPensee, todayTehilim)}
+        onClick={() => shareMiniEtude(todayPensee, todayTehilim, { name: parachaName, summary: parachaSummary, aliyah: aliyahNames[dayOfWeek] })}
         style={{ width: "100%", padding: 12, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
       >
         💬 {t.partager}
       </button>
 
       <div style={{ textAlign: "center", marginTop: 28 }}>
-        <button
-          onClick={onAdminClick}
-          aria-label="admin"
-          style={{ background: "transparent", border: "none", color: isAdmin ? C.skyBlue : "#cbd5e1", fontSize: 20, padding: 10, letterSpacing: 3 }}
-        >
+        <button onClick={onAdminClick} aria-label="admin"
+          style={{ background: "transparent", border: "none", color: isAdmin ? C.skyBlue : "#cbd5e1", fontSize: 20, padding: 10, letterSpacing: 3 }}>
           •••
         </button>
       </div>
@@ -1369,23 +1429,17 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
       {showManage && (
         <Modal>
           <h3 style={{ color: C.navy, marginBottom: 12 }}>{t.gererPensees}</h3>
-
           <label style={lbl}>{t.contenuPensee}</label>
           <textarea value={form.texte} onChange={e => setForm(f => ({ ...f, texte: e.target.value }))} style={{ ...inp, height: 60, resize: "vertical" }} placeholder="Ex: La vraie richesse..." />
-
           <label style={lbl}>{t.source}</label>
           <input value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))} style={inp} placeholder="Ex: Pirké Avot 2:7" />
-
           <label style={lbl}>{t.contenuPenseeHe}</label>
           <textarea dir="rtl" value={form.texteHe} onChange={e => setForm(f => ({ ...f, texteHe: e.target.value }))} style={{ ...inp, height: 60, resize: "vertical" }} placeholder="כתוב כאן בעברית..." />
-
           <label style={lbl}>{t.sourceHe}</label>
           <input dir="rtl" value={form.sourceHe} onChange={e => setForm(f => ({ ...f, sourceHe: e.target.value }))} style={inp} placeholder="מקור בעברית" />
-
           <button onClick={add} style={{ width: "100%", padding: 10, background: `linear-gradient(135deg, ${C.skyBlue}, #3a9cc8)`, color: C.white, borderRadius: 8, fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
             + {t.ajouterPensee}
           </button>
-
           {pensees.length > 0 && (
             <div style={{ borderTop: `1px solid ${C.lightGray}`, paddingTop: 12 }}>
               {pensees.map(p => (
@@ -1400,7 +1454,6 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
               ))}
             </div>
           )}
-
           <div style={{ marginTop: 16 }}>
             <button onClick={() => setShowManage(false)} style={{ width: "100%", padding: 10, background: C.lightGray, color: C.gray, borderRadius: 8 }}>{t.cancel}</button>
           </div>
@@ -1954,16 +2007,24 @@ function WeekBlock({ weekId, isAdmin, t, events, dayExtras, onAdd, onEdit, onEdi
 function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
   const [sunset, setSunset] = useState(null);
   const [minhaOverride, setMinhaOverride] = useState(null);
-  const [allEvents, setAllEvents] = useState([]); // all weeks' events combined
-  const [allExtras, setAllExtras] = useState({}); // { [weekId]: { [jourKey]: extrasDoc } }
+  const [allEvents, setAllEvents] = useState([]);
+  const [allExtras, setAllExtras] = useState({});
   const [weekIds, setWeekIds] = useState([getCurrentWeekId()]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
   const [showMinhaEdit, setShowMinhaEdit] = useState(false);
   const [minhaInput, setMinhaInput] = useState("");
-  const [showExtrasEdit, setShowExtrasEdit] = useState(null); // { weekId, jour } or null
+  const [showExtrasEdit, setShowExtrasEdit] = useState(null);
   const [extrasForm, setExtrasForm] = useState({ seoudaEnabled: false, seoudaTexte: "", petitDejEnabled: false, petitDejTexte: "" });
+  // Activités (fusionnées ici)
+  const [activites, setActivites] = useState([]);
+  const [showActiviteForm, setShowActiviteForm] = useState(false);
+  const [editingActivite, setEditingActivite] = useState(null);
+  const [activiteForm, setActiviteForm] = useState({});
+  // Étiquette "À venir"
+  const [aVenirText, setAVenirText] = useState("");
+  const [showAVenirEdit, setShowAVenirEdit] = useState(false);
 
   useEffect(() => {
     fetchSunset();
@@ -2020,7 +2081,43 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
 
       setWeekIds(Array.from(weeksWithData).sort((a, b) => b.localeCompare(a)));
     });
+    // Charger les activités (fusionnées ici depuis l'ancienne page Activités)
+    loadData(KEYS.activities).then(setActivites);
+    // Charger l'étiquette "À venir"
+    const savedAVenir = localStorage.getItem("aVenirText") || "";
+    setAVenirText(savedAVenir);
   }, [activeTab]);
+
+  // ── Fonctions Activités (fusionnées depuis l'ancienne page Activités)
+  async function saveActivite() {
+    const isNew = !editingActivite;
+    const entry = { ...activiteForm, id: editingActivite || Date.now().toString() };
+    const updated = editingActivite ? activites.map(e => e.id === editingActivite ? entry : e) : [entry, ...activites];
+    setActivites(updated);
+    await saveData(KEYS.activities, updated);
+    setShowActiviteForm(false);
+    if (isNew) notifyUsers("📅 Nouvelle activité : " + entry.titre, entry.date ? "Le " + entry.date : "Découvrez les détails sur l'application");
+  }
+
+  async function delActivite(id) {
+    if (!confirm("Supprimer ?")) return;
+    const u = activites.filter(e => e.id !== id);
+    setActivites(u);
+    await deleteItem(KEYS.activities, id);
+    await saveData(KEYS.activities, u);
+  }
+
+  async function moveActivite(idx, dir) {
+    const arr = [...activites]; const to = idx + dir;
+    if (to < 0 || to >= arr.length) return;
+    [arr[idx], arr[to]] = [arr[to], arr[idx]];
+    setActivites(arr); await saveData(KEYS.activities, arr);
+  }
+
+  function saveAVenir() {
+    localStorage.setItem("aVenirText", aVenirText);
+    setShowAVenirEdit(false);
+  }
 
   async function fetchSunset() {
     try {
@@ -2214,6 +2311,89 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
           onExtrasEdit={(jourKey) => openExtrasEdit(weekId, jourKey)}
         />
       ))}
+
+
+      {/* ── Section "À venir" + Activités (fusionnées depuis l'ancienne page Activités) */}
+      <div style={{ marginTop: 24, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ fontWeight: 800, color: C.navy, fontSize: 16 }}>📌 À venir</div>
+          {isAdmin && (
+            <button onClick={() => setShowAVenirEdit(true)} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>✏️ Modifier</button>
+          )}
+        </div>
+        {aVenirText ? (
+          <div style={{ background: `${C.skyBlue}18`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.navy, lineHeight: 1.6 }}>
+            {aVenirText}
+          </div>
+        ) : (
+          isAdmin && <div style={{ fontSize: 12, color: C.gray, fontStyle: "italic" }}>Aucune activité phare définie — cliquez ✏️ pour en ajouter une.</div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ fontWeight: 800, color: C.navy, fontSize: 16 }}>🎯 Activités</div>
+        {isAdmin && (
+          <button onClick={() => { setActiviteForm({ titre: "", date: "", heure: "", heureFin: "", showHeureFin: false, public: "", tarif: "", description: "", photoData: "" }); setEditingActivite(null); setShowActiviteForm(true); }} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>+ Ajouter</button>
+        )}
+      </div>
+      {activites.length === 0 && <div style={{ textAlign: "center", padding: "20px", color: C.gray, fontSize: 14 }}>Aucune activité pour le moment.</div>}
+      {activites.map((ev, idx) => (
+        <Card key={ev.id} style={{ marginBottom: 10 }}>
+          {ev.photoData && <img src={ev.photoData} alt={ev.titre} style={{ width: "100%", height: 160, objectFit: "cover" }} />}
+          <div style={{ padding: "14px 16px" }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: C.navy, marginBottom: 8 }}>{ev.titre}</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+              {ev.date && <Chip>📅 {ev.date}</Chip>}
+              {ev.heure && <Chip>🕐 {ev.heure}{ev.showHeureFin && ev.heureFin ? ` → ${ev.heureFin}` : ""}</Chip>}
+              {ev.public && <Chip>👥 {ev.public}</Chip>}
+              {ev.tarif && <Chip>💰 {ev.tarif}</Chip>}
+            </div>
+            {ev.description && <p style={{ fontSize: 13, color: C.gray, lineHeight: 1.5, marginTop: 8 }}>{ev.description}</p>}
+            <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+              <button onClick={() => shareEvent(ev)} style={{ background: "#25D366", color: "#fff", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, border: "none" }}>
+                📤 {t.partager}
+              </button>
+              {isAdmin && <AdminBtns onUp={() => moveActivite(idx, -1)} onDown={() => moveActivite(idx, 1)} onEdit={() => { setActiviteForm({ ...ev, description: ev.description || "" }); setEditingActivite(ev.id); setShowActiviteForm(true); }} onDelete={() => delActivite(ev.id)} t={t} />}
+            </div>
+          </div>
+        </Card>
+      ))}
+
+      {/* Modal: À venir */}
+      {showAVenirEdit && (
+        <Modal>
+          <h3 style={{ color: C.navy, marginBottom: 12 }}>Activité phare "À venir"</h3>
+          <label style={lbl}>Texte libre (ex: "Chabbaton le 15 juillet — inscriptions ouvertes !")</label>
+          <textarea value={aVenirText} onChange={e => setAVenirText(e.target.value)} style={{ ...inp, height: 80, resize: "vertical" }} placeholder="Décrivez l'activité phare à mettre en avant..." />
+          <ModalButtons onCancel={() => setShowAVenirEdit(false)} onSave={saveAVenir} t={t} />
+        </Modal>
+      )}
+
+      {/* Modal: Activité */}
+      {showActiviteForm && (
+        <Modal>
+          <h3 style={{ color: C.navy, marginBottom: 12 }}>{editingActivite ? t.edit : "Nouvelle activité"}</h3>
+          <label style={lbl}>{t.titre}</label>
+          <input value={activiteForm.titre || ""} onChange={e => setActiviteForm(f => ({ ...f, titre: e.target.value }))} style={inp} />
+          <PhotoInput photoData={activiteForm.photoData} onChange={d => setActiviteForm(f => ({ ...f, photoData: d }))} t={t} />
+          <label style={lbl}>{t.date}</label>
+          <input type="text" value={activiteForm.date || ""} onChange={e => setActiviteForm(f => ({ ...f, date: e.target.value }))} style={inp} placeholder="Ex: 25/06/2025 ou Chaque lundi" />
+          <label style={lbl}>{t.heure}</label>
+          <input type="time" value={activiteForm.heure || ""} onChange={e => setActiviteForm(f => ({ ...f, heure: e.target.value }))} style={inp} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
+            <input type="checkbox" checked={activiteForm.showHeureFin || false} onChange={e => setActiviteForm(f => ({ ...f, showHeureFin: e.target.checked }))} id="heureFinAct" />
+            <label htmlFor="heureFinAct" style={{ fontSize: 14 }}>Heure de fin</label>
+          </div>
+          {activiteForm.showHeureFin && <input type="time" value={activiteForm.heureFin || ""} onChange={e => setActiviteForm(f => ({ ...f, heureFin: e.target.value }))} style={inp} />}
+          <label style={lbl}>{t.public}</label>
+          <input value={activiteForm.public || ""} onChange={e => setActiviteForm(f => ({ ...f, public: e.target.value }))} style={inp} />
+          <label style={lbl}>{t.tarif}</label>
+          <input value={activiteForm.tarif || ""} onChange={e => setActiviteForm(f => ({ ...f, tarif: e.target.value }))} style={inp} />
+          <label style={lbl}>Description</label>
+          <textarea value={activiteForm.description || ""} onChange={e => setActiviteForm(f => ({ ...f, description: e.target.value }))} style={{ ...inp, height: 80, resize: "vertical" }} />
+          <ModalButtons onCancel={() => setShowActiviteForm(false)} onSave={saveActivite} t={t} />
+        </Modal>
+      )}
 
       {showMinhaEdit && (
         <Modal>
@@ -2608,7 +2788,6 @@ export default function App() {
         <div style={{display: tab === "pensee" ? "block" : "none"}}><PenseeTab isAdmin={isAdmin} t={t} activeTab={tab} lang={lang} onAdminClick={handleAdminClick} /></div>
         <div style={{display: tab === "programme" ? "block" : "none"}}><ProgrammeTab isAdmin={isAdmin} t={t} activeTab={tab} lang={lang} /></div>
         <div style={{display: tab === "shabbat" ? "block" : "none"}}><ShabbatTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
-        <div style={{display: tab === "activites" ? "block" : "none"}}><ActivitesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         <div style={{display: tab === "annonces" ? "block" : "none"}}><AnnoncesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         <div style={{display: tab === "boiteaoutils" ? "block" : "none"}}><BoiteAOutilsTab t={t} /></div>
         <div style={{display: tab === "location" ? "block" : "none"}}><LocationTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
