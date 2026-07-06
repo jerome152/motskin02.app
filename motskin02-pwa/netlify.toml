@@ -1,14 +1,18 @@
 [build]
+  base = "motskin02-pwa"
   command = "npm install && npm run build"
   publish = "build"
-  base = "motskin02-pwa"
   functions = "functions"
 
 [build.environment]
-  NODE_VERSION = "18"
   SECRETS_SCAN_OMIT_PATHS = "node_modules,build/static/js"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Dimanche 09:00 heure Israël = 07:00 UTC
+[[scheduled_functions]]
+  name = "notify-dimanche"
+  cron = "0 7 * * 0"
+
+# Vendredi 15:00 heure Israël = 13:00 UTC
+[[scheduled_functions]]
+  name = "notify-vendredi"
+  cron = "0 13 * * 5"
