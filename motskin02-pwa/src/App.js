@@ -2287,6 +2287,10 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
                 )}
               </div>
             </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
+              <span style={{ color: C.gray, fontSize: 13 }}>🌅 Chkia (Rav Ovadia)</span>
+              <span style={{ fontWeight: 700, fontSize: 13, color: C.navy }}>{sunset || "—"}</span>
+            </div>
           </div>
         </Card>
       </div>
