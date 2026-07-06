@@ -1073,11 +1073,9 @@ async function sharePensee(pensee, customTitle) {
 
 // Generates one combined image for Mini étude: Pensée du jour + Tehilim du jour + Motskin02 logo,
 // with the canvas height growing as needed so nothing is ever cut off.
-async function generateMiniEtudeShareCard(pensee, tehilim, parachaSummary, parachaName, dayOfWeek) {
+async function generateMiniEtudeShareCard(pensee, tehilim, parachaSummary, parachaName, aliyah) {
   const W = 800;
   const PAD = 44;
-  const aliyahNames = ["Rishon","Cheni","Chelishi","Revi'i","Hamichi","Chichi","Chevi'i"];
-  const aliyah = aliyahNames[dayOfWeek ?? 0] || aliyahNames[0];
 
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
