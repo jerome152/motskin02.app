@@ -140,7 +140,7 @@ const T = {
     texteReq: "Message obligatoire",
     annonceAdded: "Annonce publiée !",
     pensee: "Pensée du jour",
-    miniEtude: "Mini étude",
+    miniEtude: "Étude",
     programme: "Semaine",
     penseeDuJour: "Pensée du jour",
     ajouterPensee: "Ajouter une pensée",
@@ -240,7 +240,7 @@ const T = {
   },
 };
 
-const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces", pensees: "m02_pensees", programme: "m02_programme" };
+const KEYS = { shabbatEvents: "m02_shabbat", activities: "m02_activities", locations: "m02_locations", annonces: "m02_annonces", pensees: "m02_pensees", programme: "m02_programme", avenir: "m02_avenir" };
 
 // Default rotating thoughts (used if admin hasn't added custom ones, or mixed in with them)
 const DEFAULT_PENSEES = [
@@ -386,7 +386,7 @@ function Header({ lang, setLang, isAdmin, onAdminClick, t }) {
 
 function TabBar({ tab, setTab, t, lang }) {
   const tabs = [
-    { key: "pensee", icon: "💭", label: lang === "he" ? t.miniEtude : "Mini étude" },
+    { key: "pensee", icon: "💭", label: lang === "he" ? t.miniEtude : "Étude" },
     { key: "programme", icon: "📋", label: t.programme },
     { key: "shabbat", icon: "🇮🇱", label: t.shabbatFetes },
     { key: "annonces", icon: "📢", label: t.annonces },
@@ -2032,6 +2032,7 @@ function EventCard({ item, isAdmin, onUp, onDown, onEdit, onDelete, t }) {
               {item.date && <span>📅 {item.date} </span>}
               {item.horaire && <span>🕐 {item.horaire}{item.heureFin ? ` → ${item.heureFin}` : ""}</span>}
               {item.lieu && <span> · 📍 {item.lieu}</span>}
+              {item.paf && <span> · 💰 {item.paf}</span>}
             </div>
             {item.description && <p style={{ fontSize: 12, color: C.gray, lineHeight: 1.5, marginTop: 6 }}>{item.description}</p>}
           </div>
@@ -2158,9 +2159,14 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
   const [showActiviteForm, setShowActiviteForm] = useState(false);
   const [editingActivite, setEditingActivite] = useState(null);
   const [activiteForm, setActiviteForm] = useState({});
-  // Étiquette "À venir"
+  // Étiquette "À venir" (texte libre)
   const [aVenirText, setAVenirText] = useState("");
   const [showAVenirEdit, setShowAVenirEdit] = useState(false);
+  // Événements à venir (liste structurée, gérée comme les créneaux par jour : ordre, photo, PAF...)
+  const [avenirEvents, setAvenirEvents] = useState([]);
+  const [showAvenirForm, setShowAvenirForm] = useState(false);
+  const [editingAvenir, setEditingAvenir] = useState(null);
+  const [avenirForm, setAvenirForm] = useState({});
 
   useEffect(() => {
     fetchSunset();
@@ -2183,7 +2189,7 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
       const sorted = Array.from(weeksWithData).sort((a, b) => b.localeCompare(a));
 
       // Auto-copie : si la semaine en cours n'a pas encore d'événements personnalisés,
-      // on duplique automatiquement tous les événements de la semaine précédente
+    // on duplique automatiquement tous les événements de la semaine précédente
       // (avec leurs photos, descriptions, horaires, etc.)
       const currentWeekEvents = events.filter(e => e.semaine === currentId && e.type === "event" && !e.deleted);
       if (currentWeekEvents.length === 0) {
@@ -2215,10 +2221,15 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
         }
       }
 
-      setWeekIds(Array.from(weeksWithData).sort((a, b) => b.localeCompare(a)));
+      // On n'affiche que les 2 semaines les plus récentes (semaine actuelle + 1 précédente),
+      // même si plus de semaines existent en historique dans Firebase.
+      const sortedRecent = Array.from(weeksWithData).sort((a, b) => b.localeCompare(a));
+      setWeekIds(sortedRecent.slice(0, 2));
     });
     // Charger les activités (fusionnées ici depuis l'ancienne page Activités)
     loadData(KEYS.activities).then(setActivites);
+    // Charger les événements à venir structurés
+    loadData(KEYS.avenir).then(setAvenirEvents);
     // Charger l'étiquette "À venir"
     const savedAVenir = localStorage.getItem("aVenirText") || "";
     setAVenirText(savedAVenir);
@@ -2253,6 +2264,43 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
   function saveAVenir() {
     localStorage.setItem("aVenirText", aVenirText);
     setShowAVenirEdit(false);
+  }
+
+  // ── Fonctions Événements à venir (liste structurée, indépendante des semaines)
+  function openAddAvenir() {
+    setAvenirForm({ intitule: "", date: "", horaire: "", heureFin: "", showHeureFin: false, lieu: "", paf: "", description: "", photoData: "" });
+    setEditingAvenir(null);
+    setShowAvenirForm(true);
+  }
+  function openEditAvenir(item) {
+    setAvenirForm({ ...item, showHeureFin: !!item.heureFin });
+    setEditingAvenir(item.id);
+    setShowAvenirForm(true);
+  }
+  async function saveAvenirEvent() {
+    const exists = avenirEvents.some(e => e.id === editingAvenir);
+    const existingOrder = exists ? avenirEvents.find(e => e.id === editingAvenir)._order : avenirEvents.length;
+    const entry = { ...avenirForm, id: editingAvenir || Date.now().toString(), _order: existingOrder ?? 0 };
+    const updated = editingAvenir && exists ? avenirEvents.map(e => e.id === editingAvenir ? entry : e) : [...avenirEvents, entry];
+    setAvenirEvents(updated);
+    await saveData(KEYS.avenir, updated);
+    setShowAvenirForm(false);
+  }
+  async function delAvenirEvent(id) {
+    if (!confirm("Supprimer ?")) return;
+    const updated = avenirEvents.filter(e => e.id !== id);
+    setAvenirEvents(updated);
+    await deleteItem(KEYS.avenir, id);
+    await saveData(KEYS.avenir, updated);
+  }
+  async function moveAvenirEvent(idx, dir) {
+    const to = idx + dir;
+    if (to < 0 || to >= avenirEvents.length) return;
+    const arr = [...avenirEvents];
+    [arr[idx], arr[to]] = [arr[to], arr[idx]];
+    const reordered = arr.map((e, i) => ({ ...e, _order: i }));
+    setAvenirEvents(reordered);
+    await saveData(KEYS.avenir, reordered);
   }
 
   async function fetchSunset() {
@@ -2433,6 +2481,30 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
         </Card>
       </div>
 
+      {/* ── Événements à venir (liste structurée, gérée comme les créneaux par jour : ordre, photo, PAF) */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ fontWeight: 800, color: C.navy, fontSize: 16 }}>🔜 Événements à venir</div>
+          {isAdmin && (
+            <button onClick={openAddAvenir} style={{ background: C.lightGray, color: C.navy, borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>
+              + {t.ajouterCreneau}
+            </button>
+          )}
+        </div>
+        {avenirEvents.length === 0 && !isAdmin && null}
+        {avenirEvents.length === 0 && isAdmin && (
+          <div style={{ fontSize: 12, color: C.gray, fontStyle: "italic" }}>Aucun événement à venir défini — cliquez + pour en ajouter un.</div>
+        )}
+        {avenirEvents.map((item, idx) => (
+          <EventCard key={item.id} item={item} isAdmin={isAdmin}
+            onUp={() => moveAvenirEvent(idx, -1)}
+            onDown={() => moveAvenirEvent(idx, 1)}
+            onEdit={() => openEditAvenir(item)}
+            onDelete={() => delAvenirEvent(item.id)}
+            t={t} />
+        ))}
+      </div>
+
       <div style={{ fontWeight: 800, color: C.navy, fontSize: 16, marginBottom: 8 }}>📅 Événements par jour</div>
 
       {weekIds.map(weekId => (
@@ -2598,6 +2670,36 @@ function ProgrammeTab({ isAdmin, t, activeTab, lang }) {
           <label style={lbl}>Description <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12 }}>(optionnel)</span></label>
           <textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...inp, height: 70, resize: "vertical" }} placeholder="Détails de l'événement..." />
           <ModalButtons onCancel={() => setShowForm(false)} onSave={save} t={t} />
+        </Modal>
+      )}
+
+      {showAvenirForm && (
+        <Modal>
+          <h3 style={{ color: C.navy, marginBottom: 12 }}>🔜 {t.ajouterCreneau}</h3>
+          <label style={lbl}>{t.intitule}</label>
+          <input value={avenirForm.intitule || ""} onChange={e => setAvenirForm(f => ({ ...f, intitule: e.target.value }))} style={inp} placeholder="Ex: Soirée communautaire" />
+          <PhotoInput photoData={avenirForm.photoData} onChange={d => setAvenirForm(f => ({ ...f, photoData: d }))} t={t} />
+          <label style={lbl}>{t.date} <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12 }}>(optionnel, date ou texte libre)</span></label>
+          <input type="text" value={avenirForm.date || ""} onChange={e => setAvenirForm(f => ({ ...f, date: e.target.value }))} style={inp} placeholder="Ex: 25/06/2026" />
+          <label style={lbl}>{t.horaire}</label>
+          <input type="time" value={avenirForm.horaire || ""} onChange={e => setAvenirForm(f => ({ ...f, horaire: e.target.value }))} style={inp} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
+            <input type="checkbox" checked={avenirForm.showHeureFin || false} onChange={e => setAvenirForm(f => ({ ...f, showHeureFin: e.target.checked }))} id="heureFinAvenir" />
+            <label htmlFor="heureFinAvenir" style={{ fontSize: 14 }}>🕐 Ajouter une heure de fin</label>
+          </div>
+          {avenirForm.showHeureFin && (
+            <>
+              <label style={lbl}>Heure de fin</label>
+              <input type="time" value={avenirForm.heureFin || ""} onChange={e => setAvenirForm(f => ({ ...f, heureFin: e.target.value }))} style={inp} />
+            </>
+          )}
+          <label style={lbl}>{t.lieuOptionnel}</label>
+          <input value={avenirForm.lieu || ""} onChange={e => setAvenirForm(f => ({ ...f, lieu: e.target.value }))} style={inp} placeholder="Ex: Salle principale" />
+          <label style={lbl}>💰 PAF <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12 }}>(optionnel — n'apparaît que si rempli)</span></label>
+          <input value={avenirForm.paf || ""} onChange={e => setAvenirForm(f => ({ ...f, paf: e.target.value }))} style={inp} placeholder="Ex: 20₪ par personne" />
+          <label style={lbl}>Description <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12 }}>(optionnel)</span></label>
+          <textarea value={avenirForm.description || ""} onChange={e => setAvenirForm(f => ({ ...f, description: e.target.value }))} style={{ ...inp, height: 70, resize: "vertical" }} placeholder="Détails de l'événement..." />
+          <ModalButtons onCancel={() => setShowAvenirForm(false)} onSave={saveAvenirEvent} t={t} />
         </Modal>
       )}
     </div>
