@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 // ─── Firebase ────────────────────────────────────────────────────────────────
 import { initializeApp } from "firebase/app";
@@ -24,6 +23,14 @@ import { PRIERES } from "./prieres-data";
 import { TEHILIM_JOUR } from "./tehilim-data";
 
 const HEBCAL_API = "https://www.hebcal.com/shabbat?cfg=json&geonameid=293807&b=20&M=on";
+
+// Clé de semaine stable : date du dimanche le plus récent (yyyy-mm-dd).
+// Utilisée pour rafraîchir le résumé paracha/moussar/haftara chaque dimanche.
+function getWeekKey(d = new Date()) {
+  const date = new Date(d);
+  date.setDate(date.getDate() - date.getDay());
+  return date.toISOString().slice(0, 10);
+}
 
 // Colors from logo: sky blue gradient, dark navy, black
 const C = {
@@ -1071,6 +1078,40 @@ async function sharePensee(pensee, customTitle) {
   }
 }
 
+// Partage : Paracha de la semaine + points de moussar (carte indépendante de la Mini étude)
+async function shareParachaSemaine(parachaName, summary, mousar) {
+  const title = "📖 Paracha " + (parachaName || "");
+  const lines = [summary || ""];
+  if (mousar && mousar.length) {
+    lines.push("");
+    lines.push("💡 Points de moussar :");
+    mousar.forEach((m, i) => lines.push(`${i + 1}. ${m}`));
+  }
+  try {
+    const cardDataUrl = await generateShareCard({ title, lines, photoData: null });
+    await shareCardImage(cardDataUrl, title.replace(/[^a-z0-9]/gi, "_"));
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText(title, lines);
+  }
+}
+
+// Partage : résumé de la Haftara (carte indépendante)
+async function shareHaftara(parachaName, haftaraRef, haftaraSummary) {
+  const title = "📜 Haftara" + (parachaName ? " — " + parachaName : "");
+  const lines = [];
+  if (haftaraRef) lines.push(haftaraRef);
+  lines.push("");
+  lines.push(haftaraSummary || "");
+  try {
+    const cardDataUrl = await generateShareCard({ title, lines, photoData: null });
+    await shareCardImage(cardDataUrl, title.replace(/[^a-z0-9]/gi, "_"));
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText(title, lines);
+  }
+}
+
 // Generates one combined image for Mini étude: Pensée du jour + Tehilim du jour + Motskin02 logo,
 // with the canvas height growing as needed so nothing is ever cut off.
 async function generateMiniEtudeShareCard(pensee, tehilim, parachaSummary, parachaName, aliyah) {
@@ -1268,6 +1309,13 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
   const [parachaSummary, setParachaSummary] = useState("");
   const [parachaSummaryLoading, setParachaSummaryLoading] = useState(false);
 
+  // Paracha de la semaine + moussar + haftara (rafraîchi chaque dimanche, indépendant du bloc "aliyah du jour")
+  const [semaineSummary, setSemaineSummary] = useState("");
+  const [mousarPoints, setMousarPoints] = useState([]);
+  const [haftaraRef, setHaftaraRef] = useState("");
+  const [haftaraSummary, setHaftaraSummary] = useState("");
+  const [semaineLoading, setSemaineLoading] = useState(false);
+
   const dayOfWeek = new Date().getDay(); // 0=Dimanche … 6=Samedi
   const aliyahNames = ["Rishon","Cheni","Chelishi","Revi\'i","Hamichi","Chichi","Chevi\'i"];
 
@@ -1285,6 +1333,9 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
       if (!parashaItem) return;
       const name = parashaItem.title?.replace("Parashat ", "").replace("Parasha ", "") || "";
       setParachaName(name);
+      const haftara = parashaItem.leyning?.haftarah || "";
+      setHaftaraRef(haftara);
+      fetchParachaSemaineMousar(name, haftara);
 
       const cacheKey = "paracha_summary_" + name + "_" + dayOfWeek;
       const cached = localStorage.getItem(cacheKey);
@@ -1305,6 +1356,41 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
       console.error("Paracha summary error:", e);
     } finally {
       setParachaSummaryLoading(false);
+    }
+  }
+
+  async function fetchParachaSemaineMousar(name, haftara) {
+    try {
+      const weekKey = getWeekKey();
+      const cacheKey = "parasha_mousar_" + name + "_" + weekKey;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setSemaineSummary(parsed.summary || "");
+        setMousarPoints(parsed.mousar || []);
+        setHaftaraSummary(parsed.haftaraSummary || "");
+        return;
+      }
+
+      setSemaineLoading(true);
+      const resp = await fetch("/.netlify/functions/generate-parasha-mousar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paracha: name, haftara }),
+      });
+      const data = await resp.json();
+      setSemaineSummary(data.summary || "");
+      setMousarPoints(data.mousar || []);
+      setHaftaraSummary(data.haftaraSummary || "");
+      localStorage.setItem(cacheKey, JSON.stringify({
+        summary: data.summary || "",
+        mousar: data.mousar || [],
+        haftaraSummary: data.haftaraSummary || "",
+      }));
+    } catch (e) {
+      console.error("Parasha mousar error:", e);
+    } finally {
+      setSemaineLoading(false);
     }
   }
 
@@ -1401,6 +1487,77 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
               <div dir="rtl" style={{ color: C.skyBlueLight, fontSize: 13, fontWeight: 600 }}>— {todayPensee.sourceHe}</div>
             )}
           </>
+        )}
+      </div>
+
+      {/* BLOC 4 : Paracha de la semaine + Moussar (indépendant du bloc "Torah du jour" plus haut, rafraîchi chaque dimanche) */}
+      <div style={{ background: C.white, borderRadius: 18, padding: "20px 18px", marginBottom: 16, boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <span style={{ fontSize: 22 }}>📖</span>
+          <div>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 14 }}>Paracha de la semaine</div>
+            {parachaName && <div style={{ fontSize: 11, color: C.gray }}>{parachaName}</div>}
+          </div>
+        </div>
+        {semaineLoading && <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Chargement…</div>}
+        {!semaineLoading && semaineSummary && (
+          <div style={{ fontSize: 14, lineHeight: 1.7, color: C.text, marginBottom: mousarPoints.length ? 14 : 0 }}>
+            {semaineSummary.split("\n").filter(Boolean).map((line, i) => (
+              <p key={i} style={{ marginBottom: 6 }}>{line}</p>
+            ))}
+          </div>
+        )}
+        {!semaineLoading && mousarPoints.length > 0 && (
+          <div style={{ background: C.lightGray, borderRadius: 12, padding: "14px 14px" }}>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 13, marginBottom: 8 }}>💡 Points de moussar</div>
+            {mousarPoints.map((m, i) => (
+              <div key={i} style={{ fontSize: 13, lineHeight: 1.6, color: C.text, marginBottom: 6, display: "flex", gap: 6 }}>
+                <span style={{ color: C.skyBlue, fontWeight: 700 }}>{i + 1}.</span>
+                <span>{m}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {!semaineLoading && !semaineSummary && (
+          <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Résumé non disponible pour le moment.</div>
+        )}
+        {!semaineLoading && semaineSummary && (
+          <button
+            onClick={() => shareParachaSemaine(parachaName, semaineSummary, mousarPoints)}
+            style={{ width: "100%", padding: 10, marginTop: 14, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 13, border: "none" }}
+          >
+            💬 Partager la paracha
+          </button>
+        )}
+      </div>
+
+      {/* BLOC 5 : Haftara (indépendant, partage séparé) */}
+      <div style={{ background: C.white, borderRadius: 18, padding: "20px 18px", marginBottom: 16, boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <span style={{ fontSize: 22 }}>📜</span>
+          <div>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 14 }}>Haftara</div>
+            {haftaraRef && <div style={{ fontSize: 11, color: C.gray }}>{haftaraRef}</div>}
+          </div>
+        </div>
+        {semaineLoading && <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Chargement…</div>}
+        {!semaineLoading && haftaraSummary && (
+          <div style={{ fontSize: 14, lineHeight: 1.7, color: C.text }}>
+            {haftaraSummary.split("\n").filter(Boolean).map((line, i) => (
+              <p key={i} style={{ marginBottom: 6 }}>{line}</p>
+            ))}
+          </div>
+        )}
+        {!semaineLoading && !haftaraSummary && (
+          <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Résumé non disponible pour le moment.</div>
+        )}
+        {!semaineLoading && haftaraSummary && (
+          <button
+            onClick={() => shareHaftara(parachaName, haftaraRef, haftaraSummary)}
+            style={{ width: "100%", padding: 10, marginTop: 14, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 13, border: "none" }}
+          >
+            💬 Partager la haftara
+          </button>
         )}
       </div>
 
