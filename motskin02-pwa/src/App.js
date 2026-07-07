@@ -1078,8 +1078,9 @@ async function sharePensee(pensee, customTitle) {
   }
 }
 
-// Partage : Paracha de la semaine + points de moussar (carte indépendante de la Mini étude)
-async function shareParachaSemaine(parachaName, summary, mousar) {
+// Partage combiné : Paracha de la semaine + points de moussar + Haftara, en une seule image
+// (les deux blocs restent affichés séparément dans l'app, mais partagés ensemble via un seul bouton)
+async function shareParachaEtHaftara(parachaName, summary, mousar, haftaraRef, haftaraSummary) {
   const title = "📖 Paracha " + (parachaName || "");
   const lines = [summary || ""];
   if (mousar && mousar.length) {
@@ -1087,21 +1088,8 @@ async function shareParachaSemaine(parachaName, summary, mousar) {
     lines.push("💡 Points de moussar :");
     mousar.forEach((m, i) => lines.push(`${i + 1}. ${m}`));
   }
-  try {
-    const cardDataUrl = await generateShareCard({ title, lines, photoData: null });
-    await shareCardImage(cardDataUrl, title.replace(/[^a-z0-9]/gi, "_"));
-  } catch (e) {
-    console.error("Share card error:", e);
-    shareAsText(title, lines);
-  }
-}
-
-// Partage : résumé de la Haftara (carte indépendante)
-async function shareHaftara(parachaName, haftaraRef, haftaraSummary) {
-  const title = "📜 Haftara" + (parachaName ? " — " + parachaName : "");
-  const lines = [];
-  if (haftaraRef) lines.push(haftaraRef);
   lines.push("");
+  lines.push("📜 Haftara" + (haftaraRef ? " — " + haftaraRef : ""));
   lines.push(haftaraSummary || "");
   try {
     const cardDataUrl = await generateShareCard({ title, lines, photoData: null });
@@ -1490,6 +1478,13 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
         )}
       </div>
 
+      <button
+        onClick={() => shareMiniEtude(todayPensee, todayTehilim, { name: parachaName, summary: parachaSummary, aliyah: aliyahNames[dayOfWeek] })}
+        style={{ width: "100%", padding: 12, marginBottom: 20, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
+      >
+        💬 {t.partager}
+      </button>
+
       {/* BLOC 4 : Paracha de la semaine + Moussar (indépendant du bloc "Torah du jour" plus haut, rafraîchi chaque dimanche) */}
       <div style={{ background: C.white, borderRadius: 18, padding: "20px 18px", marginBottom: 16, boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -1521,17 +1516,9 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
         {!semaineLoading && !semaineSummary && (
           <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Résumé non disponible pour le moment.</div>
         )}
-        {!semaineLoading && semaineSummary && (
-          <button
-            onClick={() => shareParachaSemaine(parachaName, semaineSummary, mousarPoints)}
-            style={{ width: "100%", padding: 10, marginTop: 14, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 13, border: "none" }}
-          >
-            💬 Partager la paracha
-          </button>
-        )}
       </div>
 
-      {/* BLOC 5 : Haftara (indépendant, partage séparé) */}
+      {/* BLOC 5 : Haftara (bloc visuel séparé, mais partagée avec la paracha via un seul bouton ci-dessous) */}
       <div style={{ background: C.white, borderRadius: 18, padding: "20px 18px", marginBottom: 16, boxShadow: "0 2px 14px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}33` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 22 }}>📜</span>
@@ -1551,28 +1538,22 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
         {!semaineLoading && !haftaraSummary && (
           <div style={{ color: C.gray, fontSize: 13, fontStyle: "italic" }}>Résumé non disponible pour le moment.</div>
         )}
-        {!semaineLoading && haftaraSummary && (
-          <button
-            onClick={() => shareHaftara(parachaName, haftaraRef, haftaraSummary)}
-            style={{ width: "100%", padding: 10, marginTop: 14, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 13, border: "none" }}
-          >
-            💬 Partager la haftara
-          </button>
-        )}
       </div>
+
+      {!semaineLoading && (semaineSummary || haftaraSummary) && (
+        <button
+          onClick={() => shareParachaEtHaftara(parachaName, semaineSummary, mousarPoints, haftaraRef, haftaraSummary)}
+          style={{ width: "100%", padding: 12, marginBottom: 20, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
+        >
+          💬 Partager la paracha et la haftara
+        </button>
+      )}
 
       {isAdmin && (
         <button onClick={() => setShowManage(true)} style={{ width: "100%", padding: 12, background: C.lightGray, color: C.navy, borderRadius: 10, fontWeight: 600, fontSize: 14, border: `1px solid ${C.skyBlue}55`, marginBottom: 12 }}>
           ⚙️ {t.gererPensees}
         </button>
       )}
-
-      <button
-        onClick={() => shareMiniEtude(todayPensee, todayTehilim, { name: parachaName, summary: parachaSummary, aliyah: aliyahNames[dayOfWeek] })}
-        style={{ width: "100%", padding: 12, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
-      >
-        💬 {t.partager}
-      </button>
 
       <div style={{ textAlign: "center", marginTop: 28 }}>
         <button onClick={onAdminClick} aria-label="admin"
