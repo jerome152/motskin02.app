@@ -3021,6 +3021,12 @@ export default function App() {
 
   const handleAdminClick = () => isAdmin ? setIsAdmin(false) : setShowAdminModal(true);
 
+  // Remonter systématiquement en haut de page à chaque changement d'onglet
+  function changeTab(newTab) {
+    setTab(newTab);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: C.lightGray }}>
       <style>{globalCSS}</style>
@@ -3035,7 +3041,7 @@ export default function App() {
         <div style={{display: tab === "location" ? "block" : "none"}}><LocationTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         {tab === "reglements" && <ReglementsTab t={t} />}
       </div>
-      <TabBar tab={tab} setTab={setTab} t={t} lang={lang} />
+      <TabBar tab={tab} setTab={changeTab} t={t} lang={lang} />
     </div>
   );
 }
