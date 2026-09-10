@@ -1045,7 +1045,7 @@ function DonsAuthForm({ d }) {
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const errMsg = (code) => d.errors[code] || d.errors.generic;
+  const errMsg = (code) => d.errors[code] || `${d.errors.generic} (${code || "?"})`;
 
   async function submit() {
     setErr(""); setInfo("");
@@ -1056,6 +1056,7 @@ function DonsAuthForm({ d }) {
       if (mode === "register") await createUserWithEmailAndPassword(auth, mail, pwd);
       else await signInWithEmailAndPassword(auth, mail, pwd);
     } catch (e) {
+      console.error("Dons auth error:", e);
       setErr(errMsg(e.code));
       setBusy(false);
     }
