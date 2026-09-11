@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 // ─── Firebase ────────────────────────────────────────────────────────────────
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, getDoc, setDoc, deleteDoc, doc, orderBy, query, increment } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -62,6 +62,7 @@ function trackAppUsage() {
     bumpStat("installations_confirmees_android");
   });
 }
+const auth = getAuth(firebaseApp);
 
 
 
@@ -440,6 +441,7 @@ function TabBar({ tab, setTab, t, lang }) {
     { key: "annonces", icon: "📢", label: t.annonces },
     { key: "boiteaoutils", icon: "📔", label: lang === "he" ? "סידור" : "Sidour" },
     { key: "location", icon: "🏛️", label: t.location },
+    { key: "dons", icon: "🤲", label: DT[lang]?.tab || "Mes dons" },
     { key: "reglements", icon: "💳", label: t.reglements },
   ];
 
@@ -965,6 +967,380 @@ function ReglementsTab({ t }) {
 }
 
 
+// ─── MES DONS TAB ────────────────────────────────────────────────────────────
+// Espace personnel du fidèle : total en attente, promesses, paiements, bouton Cardcom.
+// Les données viennent du Google Sheet via la fonction Netlify /functions/dons.js,
+// qui ne renvoie que les lignes de l'e-mail connecté (et la vue globale aux admins).
+const DONS_PAY_URL = "https://secure.cardcom.solutions/EA/EA5/7O0bbu78x0q6tm73LFNAQ/PaymentSP";
+
+const DT = {
+  fr: {
+    tab: "Mes dons",
+    title: "Mes dons",
+    intro: "Consultez vos promesses de dons et vos paiements.",
+    email: "Adresse e-mail",
+    password: "Mot de passe",
+    confirm: "Confirmer le mot de passe",
+    login: "Se connecter",
+    register: "Créer mon accès",
+    haveAccount: "J'ai déjà un accès",
+    noAccount: "Première visite ? Créer mon accès",
+    forgot: "Mot de passe oublié ?",
+    resetSent: "Si un accès existe pour cet e-mail, un lien de réinitialisation vient d'être envoyé.",
+    enterEmail: "Saisissez d'abord votre adresse e-mail.",
+    pwdHint: "6 caractères minimum",
+    logout: "Déconnexion",
+    pending: "Total des dons en attente",
+    pay: "Régler mes dons",
+    promises: "Promesses de dons",
+    payments: "Paiements effectués",
+    none: "Aucune ligne pour le moment.",
+    refresh: "Actualiser",
+    loading: "Chargement…",
+    loadError: "Impossible de charger les données. Réessayez plus tard.",
+    payNote: "Après un paiement, il apparaîtra ici dès son enregistrement par la synagogue.",
+    myView: "Mon espace",
+    adminView: "Vue admin",
+    totPromises: "Promesses",
+    totPayments: "Règlements",
+    totPending: "En attente",
+    search: "Rechercher (e-mail ou événement)",
+    fideles: "fidèle(s)",
+    promised: "Promis",
+    paid: "Réglé",
+    balance: "Solde",
+    errors: {
+      "auth/invalid-email": "Adresse e-mail invalide.",
+      "auth/missing-password": "Saisissez un mot de passe.",
+      "auth/email-already-in-use": "Un accès existe déjà pour cet e-mail. Connectez-vous ou utilisez « Mot de passe oublié ».",
+      "auth/weak-password": "Le mot de passe doit contenir au moins 6 caractères.",
+      "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
+      "auth/wrong-password": "E-mail ou mot de passe incorrect.",
+      "auth/user-not-found": "E-mail ou mot de passe incorrect.",
+      "auth/too-many-requests": "Trop de tentatives. Réessayez dans quelques minutes.",
+      "auth/network-request-failed": "Problème de connexion internet.",
+      "auth/operation-not-allowed": "La connexion par e-mail n'est pas encore activée. Contactez la synagogue.",
+      mismatch: "Les deux mots de passe ne correspondent pas.",
+      generic: "Une erreur est survenue. Réessayez.",
+    },
+  },
+  he: {
+    tab: "התרומות שלי",
+    title: "התרומות שלי",
+    intro: "צפייה בהתחייבויות לתרומה ובתשלומים שביצעת.",
+    email: "כתובת דוא\"ל",
+    password: "סיסמה",
+    confirm: "אימות סיסמה",
+    login: "כניסה",
+    register: "יצירת חשבון",
+    haveAccount: "יש לי כבר חשבון",
+    noAccount: "כניסה ראשונה? יצירת חשבון",
+    forgot: "שכחת את הסיסמה?",
+    resetSent: "אם קיים חשבון עבור כתובת זו, נשלח אליה קישור לאיפוס הסיסמה.",
+    enterEmail: "יש להזין קודם את כתובת הדוא\"ל.",
+    pwdHint: "לפחות 6 תווים",
+    logout: "יציאה",
+    pending: "סך התרומות הממתינות לתשלום",
+    pay: "לתשלום התרומות",
+    promises: "התחייבויות לתרומה",
+    payments: "תשלומים שבוצעו",
+    none: "אין רשומות כרגע.",
+    refresh: "רענון",
+    loading: "טוען…",
+    loadError: "לא ניתן לטעון את הנתונים. נסו שוב מאוחר יותר.",
+    payNote: "לאחר התשלום, הוא יופיע כאן מיד כשיירשם על ידי בית הכנסת.",
+    myView: "האזור שלי",
+    adminView: "תצוגת מנהל",
+    totPromises: "התחייבויות",
+    totPayments: "תשלומים",
+    totPending: "ממתין",
+    search: "חיפוש (דוא\"ל או אירוע)",
+    fideles: "מתפללים",
+    promised: "התחייבות",
+    paid: "שולם",
+    balance: "יתרה",
+    errors: {
+      "auth/invalid-email": "כתובת דוא\"ל לא תקינה.",
+      "auth/missing-password": "יש להזין סיסמה.",
+      "auth/email-already-in-use": "כבר קיים חשבון עם כתובת זו. יש להתחבר או להשתמש ב\"שכחת את הסיסמה?\".",
+      "auth/weak-password": "הסיסמה חייבת להכיל לפחות 6 תווים.",
+      "auth/invalid-credential": "דוא\"ל או סיסמה שגויים.",
+      "auth/wrong-password": "דוא\"ל או סיסמה שגויים.",
+      "auth/user-not-found": "דוא\"ל או סיסמה שגויים.",
+      "auth/too-many-requests": "יותר מדי ניסיונות. נסו שוב בעוד מספר דקות.",
+      "auth/network-request-failed": "בעיה בחיבור לאינטרנט.",
+      "auth/operation-not-allowed": "הכניסה עם דוא\"ל עדיין לא הופעלה. יש לפנות לבית הכנסת.",
+      mismatch: "הסיסמאות אינן תואמות.",
+      generic: "אירעה שגיאה. נסו שוב.",
+    },
+  },
+};
+
+function formatShekel(n, lang) {
+  return new Intl.NumberFormat(lang === "he" ? "he-IL" : "fr-FR", { maximumFractionDigits: 2 }).format(n || 0) + " ₪";
+}
+
+const donsBtnPrimary = { width: "100%", padding: 13, background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, color: C.skyBlueLight, borderRadius: 10, fontSize: 15, fontWeight: 700 };
+const donsLink = { background: "transparent", color: C.navy, fontSize: 13, fontWeight: 600, textDecoration: "underline", padding: 4 };
+
+function DonsAuthForm({ d }) {
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [pwd2, setPwd2] = useState("");
+  const [err, setErr] = useState("");
+  const [info, setInfo] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const errMsg = (code) => d.errors[code] || `${d.errors.generic} (${code || "?"})`;
+
+  async function submit() {
+    setErr(""); setInfo("");
+    const mail = email.trim();
+    if (mode === "register" && pwd !== pwd2) { setErr(d.errors.mismatch); return; }
+    setBusy(true);
+    try {
+      if (mode === "register") await createUserWithEmailAndPassword(auth, mail, pwd);
+      else await signInWithEmailAndPassword(auth, mail, pwd);
+    } catch (e) {
+      console.error("Dons auth error:", e);
+      setErr(errMsg(e.code));
+      setBusy(false);
+    }
+  }
+
+  async function forgot() {
+    setErr(""); setInfo("");
+    const mail = email.trim();
+    if (!mail) { setErr(d.enterEmail); return; }
+    try {
+      await sendPasswordResetEmail(auth, mail);
+      setInfo(d.resetSent);
+    } catch (e) {
+      if (e.code === "auth/user-not-found") setInfo(d.resetSent);
+      else setErr(errMsg(e.code));
+    }
+  }
+
+  function switchMode(m) { setMode(m); setErr(""); setInfo(""); setPwd(""); setPwd2(""); }
+
+  return (
+    <Card>
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, padding: "24px 18px", textAlign: "center" }}>
+        <img src={LOGO_SRC} alt="logo" style={{ width: 72, height: 72, borderRadius: 14, objectFit: "cover", marginBottom: 10 }} />
+        <h2 style={{ color: C.white, fontSize: 20, marginBottom: 6 }}>🤲 {d.title}</h2>
+        <p style={{ color: C.skyBlueLight, fontSize: 13, lineHeight: 1.5 }}>{d.intro}</p>
+      </div>
+      <div style={{ padding: "8px 18px 18px" }}>
+        <label style={lbl}>{d.email}</label>
+        <input type="email" dir="ltr" autoComplete="email" inputMode="email" value={email}
+          onChange={(e) => setEmail(e.target.value)} style={inp} />
+        <label style={lbl}>{d.password}</label>
+        <input type="password" dir="ltr" autoComplete={mode === "register" ? "new-password" : "current-password"} value={pwd}
+          onChange={(e) => setPwd(e.target.value)} onKeyDown={(e) => e.key === "Enter" && mode === "login" && submit()} style={inp} />
+        {mode === "register" && (
+          <>
+            <div style={{ fontSize: 11, color: C.gray, marginBottom: 2 }}>{d.pwdHint}</div>
+            <label style={lbl}>{d.confirm}</label>
+            <input type="password" dir="ltr" autoComplete="new-password" value={pwd2}
+              onChange={(e) => setPwd2(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} style={inp} />
+          </>
+        )}
+        {err && <div style={{ color: C.danger, fontSize: 13, margin: "8px 0" }}>{err}</div>}
+        {info && <div style={{ color: "#15803d", fontSize: 13, margin: "8px 0" }}>{info}</div>}
+        <button onClick={submit} disabled={busy} style={{ ...donsBtnPrimary, marginTop: 12, opacity: busy ? 0.6 : 1 }}>
+          {busy ? d.loading : mode === "register" ? d.register : d.login}
+        </button>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginTop: 12 }}>
+          {mode === "login" ? (
+            <>
+              <button onClick={() => switchMode("register")} style={donsLink}>{d.noAccount}</button>
+              <button onClick={forgot} style={{ ...donsLink, color: C.gray, fontWeight: 500 }}>{d.forgot}</button>
+            </>
+          ) : (
+            <button onClick={() => switchMode("login")} style={donsLink}>{d.haveAccount}</button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function DonsStatus({ d, loading, loadErr, onRefresh }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, margin: "0 2px 12px" }}>
+      <span style={{ fontSize: 12, color: loadErr ? C.danger : C.gray }}>{loading ? d.loading : loadErr ? d.loadError : ""}</span>
+      <button onClick={onRefresh} disabled={loading}
+        style={{ background: C.white, color: C.navy, border: `1px solid ${C.skyBlue}`, borderRadius: 20, padding: "5px 12px", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", opacity: loading ? 0.6 : 1 }}>
+        🔄 {d.refresh}
+      </button>
+    </div>
+  );
+}
+
+function DonsList({ title, icon, items, total, d, lang }) {
+  return (
+    <Card>
+      <div style={{ padding: "12px 16px", background: `${C.skyBlue}18`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, borderBottom: `1px solid ${C.skyBlue}33` }}>
+        <span style={{ fontWeight: 700, color: C.navy, fontSize: 15 }}>{icon} {title}</span>
+        <span style={{ fontWeight: 700, color: C.navy, fontSize: 14, whiteSpace: "nowrap" }}><bdi>{formatShekel(total, lang)}</bdi></span>
+      </div>
+      {!items || items.length === 0 ? (
+        <div style={{ padding: 16, color: C.gray, fontSize: 13 }}>{d.none}</div>
+      ) : (
+        items.map((it, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: i < items.length - 1 ? "1px solid #f0f4f8" : "none" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.navy, wordBreak: "break-word" }}>{it.evenement || "—"}</div>
+              <div style={{ fontSize: 12, color: C.gray }}><bdi>{it.date}</bdi></div>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, whiteSpace: "nowrap" }}><bdi>{formatShekel(it.montant, lang)}</bdi></div>
+          </div>
+        ))
+      )}
+    </Card>
+  );
+}
+
+function DonsMine({ d, lang, data, loading, loadErr, onRefresh }) {
+  return (
+    <>
+      <div style={{ background: `linear-gradient(160deg, #5bbfea 0%, #3a9cc8 45%, ${C.navy} 100%)`, borderRadius: 18, padding: "22px 18px", textAlign: "center", marginBottom: 14, boxShadow: "0 4px 20px rgba(26,46,82,0.3)" }}>
+        <div style={{ fontSize: 13, color: C.white, opacity: 0.9, fontWeight: 600 }}>{d.pending}</div>
+        <div style={{ fontSize: 36, fontWeight: 700, color: C.white, margin: "6px 0 16px", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>
+          <bdi>{data ? formatShekel(data.enAttente, lang) : "—"}</bdi>
+        </div>
+        <a href={DONS_PAY_URL} target="_blank" rel="noopener noreferrer"
+          style={{ display: "block", padding: "14px 20px", background: C.white, color: C.navy, borderRadius: 12, textDecoration: "none", fontWeight: 700, fontSize: 16, boxShadow: "0 3px 10px rgba(0,0,0,0.15)" }}>
+          💳 {d.pay}
+        </a>
+      </div>
+      <DonsStatus d={d} loading={loading} loadErr={loadErr} onRefresh={onRefresh} />
+      <DonsList title={d.promises} icon="📝" items={data?.promesses} total={data?.totalPromesses} d={d} lang={lang} />
+      <DonsList title={d.payments} icon="✅" items={data?.reglements} total={data?.totalReglements} d={d} lang={lang} />
+      <p style={{ fontSize: 12, color: C.gray, textAlign: "center", lineHeight: 1.5, padding: "0 10px" }}>{d.payNote}</p>
+    </>
+  );
+}
+
+function DonsAdmin({ d, lang, admin, loading, loadErr, onRefresh }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(null);
+  const s = q.trim().toLowerCase();
+  const list = admin.fideles.filter((f) => !s || f.email.includes(s) || f.lignes.some((l) => (l.evenement || "").toLowerCase().includes(s)));
+  const stat = (label, value, color) => (
+    <div style={{ flex: 1, background: C.white, borderRadius: 12, padding: "10px 6px", textAlign: "center", border: `1px solid ${C.skyBlue}33`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+      <div style={{ fontSize: 11, color: C.gray, fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: color || C.navy, marginTop: 3 }}><bdi>{formatShekel(value, lang)}</bdi></div>
+    </div>
+  );
+  const soldeColor = (n) => (n > 0 ? "#b45309" : "#15803d");
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        {stat(d.totPromises, admin.totalPromesses)}
+        {stat(d.totPayments, admin.totalReglements)}
+        {stat(d.totPending, admin.enAttente, soldeColor(admin.enAttente))}
+      </div>
+      <DonsStatus d={d} loading={loading} loadErr={loadErr} onRefresh={onRefresh} />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={d.search} style={{ ...inp, marginBottom: 8 }} />
+      <div style={{ fontSize: 12, color: C.gray, margin: "0 2px 8px" }}>{list.length} {d.fideles}</div>
+      {list.map((f) => (
+        <Card key={f.email} style={{ marginBottom: 10 }}>
+          <button onClick={() => setOpen(open === f.email ? null : f.email)}
+            style={{ width: "100%", background: "transparent", padding: "12px 14px", textAlign: "start", display: "block" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <span dir="ltr" style={{ fontSize: 13, fontWeight: 700, color: C.navy, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{f.email}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: soldeColor(f.solde), whiteSpace: "nowrap" }}><bdi>{formatShekel(f.solde, lang)}</bdi></span>
+            </div>
+            <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>
+              {d.promised} <bdi>{formatShekel(f.promesses, lang)}</bdi> · {d.paid} <bdi>{formatShekel(f.reglements, lang)}</bdi> {open === f.email ? "▴" : "▾"}
+            </div>
+          </button>
+          {open === f.email && (
+            <div style={{ borderTop: "1px solid #f0f4f8" }}>
+              {f.lignes.map((l, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 14px", borderBottom: i < f.lignes.length - 1 ? "1px solid #f0f4f8" : "none", fontSize: 13 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: C.navy, fontWeight: 600, wordBreak: "break-word" }}>{l.evenement || "—"}</div>
+                    <div style={{ color: C.gray, fontSize: 11 }}><bdi>{l.date}</bdi></div>
+                  </div>
+                  <div style={{ whiteSpace: "nowrap", fontWeight: 700, color: l.promesse ? C.navy : "#15803d" }}>
+                    {l.promesse ? "📝 " : "✅ "}<bdi>{formatShekel(l.promesse || l.reglement, lang)}</bdi>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      ))}
+    </>
+  );
+}
+
+function DonsTab({ lang, activeTab }) {
+  const d = DT[lang] || DT.fr;
+  const [user, setUser] = useState(undefined); // undefined = vérification en cours
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadErr, setLoadErr] = useState(false);
+  const [view, setView] = useState("me");
+
+  useEffect(() => onAuthStateChanged(auth, (u) => {
+    setUser(u);
+    if (!u) { setData(null); setView("me"); setLoadErr(false); }
+  }), []);
+
+  useEffect(() => { auth.languageCode = lang === "he" ? "he" : "fr"; }, [lang]);
+
+  async function load() {
+    if (!auth.currentUser) return;
+    setLoading(true);
+    setLoadErr(false);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const r = await fetch("/.netlify/functions/dons", { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setData(await r.json());
+    } catch (e) {
+      console.error("Dons load error:", e);
+      setLoadErr(true);
+    }
+    setLoading(false);
+  }
+
+  // Recharge à chaque connexion et à chaque ouverture de l'onglet (le sheet peut avoir changé)
+  useEffect(() => { if (user && activeTab === "dons") load(); }, [user, activeTab]);
+
+  const wrap = { padding: "16px 14px 90px" };
+
+  if (user === undefined) return <div style={wrap}><p style={{ textAlign: "center", color: C.gray, marginTop: 30 }}>{d.loading}</p></div>;
+  if (!user) return <div style={wrap}><DonsAuthForm d={d} /></div>;
+
+  const segBtn = (active) => ({ flex: 1, padding: "8px 6px", borderRadius: 8, fontSize: 13, fontWeight: 700, background: active ? `linear-gradient(135deg, ${C.navy}, #1e3d6e)` : "transparent", color: active ? C.skyBlueLight : C.navy });
+
+  return (
+    <div style={wrap}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span dir="ltr" style={{ fontSize: 13, color: C.navy, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>👤 {user.email}</span>
+        <button onClick={() => signOut(auth)} style={{ background: C.white, color: C.navy, border: `1px solid #d1d5db`, borderRadius: 20, padding: "5px 12px", fontSize: 12, whiteSpace: "nowrap" }}>{d.logout}</button>
+      </div>
+
+      {data?.isAdmin && data?.admin && (
+        <div style={{ display: "flex", gap: 6, background: C.white, borderRadius: 10, padding: 4, marginBottom: 14, border: `1px solid ${C.skyBlue}55` }}>
+          <button onClick={() => setView("me")} style={segBtn(view === "me")}>{d.myView}</button>
+          <button onClick={() => setView("admin")} style={segBtn(view === "admin")}>🛠️ {d.adminView}</button>
+        </div>
+      )}
+
+      {view === "admin" && data?.admin
+        ? <DonsAdmin d={d} lang={lang} admin={data.admin} loading={loading} loadErr={loadErr} onRefresh={load} />
+        : <DonsMine d={d} lang={lang} data={data} loading={loading} loadErr={loadErr} onRefresh={load} />}
+    </div>
+  );
+}
+
 // ─── ANNONCES TAB ────────────────────────────────────────────────────────────
 async function shareAnnonce(a) {
   const lines = [`👤 ${a.prenom} ${a.nom}`, `🗓️ ${a.date}`, "", a.texte];
@@ -1422,8 +1798,8 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
       setMousarPoints(data.mousar || []);
       setHaftaraSummary(data.haftaraSummary || "");
       // On ne met en cache que les réponses réussies : si l'appel a échoué
-      // (ex: plus de crédits API), on ne veut pas rester bloqué sur un résultat
-      // vide jusqu'à la semaine prochaine — on retentera au prochain chargement.
+      // (ex: plus de crédits API, ou semaine de fête sans paracha), on ne veut pas
+      // rester bloqué sur un résultat vide jusqu'à la semaine prochaine.
       if (data.summary) {
         localStorage.setItem(cacheKey, JSON.stringify({
           summary: data.summary || "",
@@ -3147,6 +3523,7 @@ export default function App() {
         <div style={{display: tab === "annonces" ? "block" : "none"}}><AnnoncesTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
         <div style={{display: tab === "boiteaoutils" ? "block" : "none"}}><BoiteAOutilsTab t={t} /></div>
         <div style={{display: tab === "location" ? "block" : "none"}}><LocationTab isAdmin={isAdmin} t={t} activeTab={tab} /></div>
+        <div style={{display: tab === "dons" ? "block" : "none"}}><DonsTab lang={lang} activeTab={tab} /></div>
         {tab === "reglements" && <ReglementsTab t={t} />}
       </div>
       <TabBar tab={tab} setTab={changeTab} t={t} lang={lang} />
