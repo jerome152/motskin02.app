@@ -1365,9 +1365,12 @@ function PenseeTab({ isAdmin, t, activeTab, lang, onAdminClick }) {
     try {
       const r = await fetch(HEBCAL_API);
       const j = await r.json();
-      const parashaItem = j.items?.find(i => i.category === "parashat");
+      const parashaItem =
+        j.items?.find(i => i.category === "parashat") ||
+        j.items?.find(i => i.category === "holiday" && (i.subcat === "major" || !i.subcat));
       if (!parashaItem) return;
-      const name = parashaItem.title?.replace("Parashat ", "").replace("Parasha ", "") || "";
+      const rawName = parashaItem.title || "";
+      const name = rawName.replace("Parashat ", "").replace("Parasha ", "").replace(/^Erev /, "");
       setParachaName(name);
       const haftara = parashaItem.leyning?.haftarah || "";
       setHaftaraRef(haftara);
