@@ -68,7 +68,7 @@ const auth = getAuth(firebaseApp);
 
 import logoSrc from "./logo.jpg";
 const LOGO_SRC = logoSrc;
-import { PRIERES } from "./prieres-data";
+import { PRIERES, NOVA_CHANTS } from "./prieres-data";
 import { TEHILIM_JOUR } from "./tehilim-data";
 
 const HEBCAL_API = "https://www.hebcal.com/shabbat?cfg=json&geonameid=293807&b=20&M=on";
@@ -3385,10 +3385,209 @@ function PrayerDetail({ priere, format, onBack, onChangeFormat }) {
   );
 }
 
+// Generates one combined image with all 5 Nova chants (Hebrew + French explanation each),
+// with adaptive font sizing so the full set fits within a safely renderable canvas height.
+async function generateNovaShareCard(chants) {
+  const W = 800;
+  const PAD = 44;
+  const MAX_SAFE_HEIGHT = 12000;
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  function wrapLines(text, maxWidth) {
+    const paragraphs = String(text).split("\n");
+    const lines = [];
+    paragraphs.forEach(para => {
+      if (para.trim() === "") { lines.push(""); return; }
+      const words = para.split(" ");
+      let line = "";
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + " ";
+        if (ctx.measureText(test).width > maxWidth && line !== "") {
+          lines.push(line.trim());
+          line = words[i] + " ";
+        } else {
+          line = test;
+        }
+      }
+      if (line.trim()) lines.push(line.trim());
+    });
+    return lines;
+  }
+
+  const headerH = 150;
+  const footerH = 70;
+  const chantGap = 34;
+  const sepH = 20;
+
+  const sizeSteps = [
+    { titre: 22, heb: 26, hebLineH: 38, fra: 17, fraLineH: 25 },
+    { titre: 19, heb: 21, hebLineH: 31, fra: 14, fraLineH: 21 },
+    { titre: 16, heb: 17, hebLineH: 25, fra: 12, fraLineH: 18 },
+    { titre: 14, heb: 14, hebLineH: 21, fra: 10, fraLineH: 15 },
+  ];
+
+  let chosen = sizeSteps[sizeSteps.length - 1];
+  let layout, H;
+  for (const step of sizeSteps) {
+    ctx.font = `${step.heb}px 'Arial Hebrew', 'Times New Roman', serif`;
+    ctx.font = `italic ${step.fra}px Arial, sans-serif`;
+    let y = headerH + 30;
+    const chantLayouts = chants.map(chant => {
+      ctx.font = `${step.heb}px 'Arial Hebrew', 'Times New Roman', serif`;
+      const hebLines = wrapLines(chant.hebreu, W - PAD * 2 - 20);
+      ctx.font = `italic ${step.fra}px Arial, sans-serif`;
+      const fraLines = wrapLines(chant.francais, W - PAD * 2);
+      const blockH = 34 + hebLines.length * step.hebLineH + 14 + fraLines.length * step.fraLineH;
+      return { hebLines, fraLines, blockH };
+    });
+    const totalH = chantLayouts.reduce((sum, c) => sum + c.blockH + chantGap + sepH, 0);
+    const tryH = headerH + 30 + totalH + footerH + PAD;
+    chosen = step;
+    layout = chantLayouts;
+    H = tryH;
+    if (tryH <= MAX_SAFE_HEIGHT) break;
+  }
+
+  canvas.width = W;
+  canvas.height = H;
+
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#ffffff");
+  grad.addColorStop(1, "#f0f4f8");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Header
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillRect(0, 0, W, headerH);
+  const logoImg = await new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = LOGO_SRC;
+  });
+  if (logoImg) {
+    const logoSize = 86;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(PAD + logoSize / 2, headerH / 2, logoSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(logoImg, PAD, headerH / 2 - logoSize / 2, logoSize, logoSize);
+    ctx.restore();
+  }
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 30px Arial, sans-serif";
+  ctx.fillText("🎗️ Nova", PAD + 104, headerH / 2 - 6);
+  ctx.font = "16px Arial, sans-serif";
+  ctx.fillStyle = "#a8ddf4";
+  ctx.fillText("Chants de foi et d'espérance", PAD + 104, headerH / 2 + 22);
+
+  let y = headerH + 30;
+  chants.forEach((chant, i) => {
+    const { hebLines, fraLines } = layout[i];
+
+    ctx.textAlign = "center";
+    ctx.font = `bold ${chosen.titre}px Arial, sans-serif`;
+    ctx.fillStyle = "#5bbfea";
+    ctx.fillText(`Chant ${chant.numero} · ${chant.titre}`, W / 2, y);
+    y += 34;
+
+    ctx.font = `${chosen.heb}px 'Arial Hebrew', 'Times New Roman', serif`;
+    ctx.fillStyle = "#1a2e52";
+    ctx.textAlign = "right";
+    hebLines.forEach(line => { ctx.fillText(line, W - PAD, y); y += chosen.hebLineH; });
+    y += 14;
+
+    ctx.font = `italic ${chosen.fra}px Arial, sans-serif`;
+    ctx.fillStyle = "#374151";
+    ctx.textAlign = "left";
+    fraLines.forEach(line => { ctx.fillText(line, PAD, y); y += chosen.fraLineH; });
+
+    y += chantGap / 2;
+    if (i < chants.length - 1) {
+      ctx.strokeStyle = "#5bbfea55";
+      ctx.beginPath();
+      ctx.moveTo(PAD, y);
+      ctx.lineTo(W - PAD, y);
+      ctx.stroke();
+    }
+    y += chantGap / 2 + sepH;
+  });
+
+  // Footer
+  y = H - footerH / 2;
+  ctx.textAlign = "center";
+  ctx.font = "bold 22px Arial, sans-serif";
+  ctx.fillStyle = "#1a2e52";
+  ctx.fillText("🇮🇱 Beth Haknesset Motskin02", W / 2, y);
+
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+async function shareNova(chants) {
+  try {
+    const cardDataUrl = await generateNovaShareCard(chants);
+    await shareCardImage(cardDataUrl, "Nova");
+  } catch (e) {
+    console.error("Share card error:", e);
+    shareAsText("Nova", chants.map(c => `${c.titre} — ${c.francais}`));
+  }
+}
+
+function NovaDetail({ chants, onBack }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: C.lightGray, zIndex: 350, overflowY: "auto" }}>
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1e3d6e)`, padding: "16px 16px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10 }}>
+        <button onClick={onBack} style={{ background: "rgba(255,255,255,0.2)", color: C.white, borderRadius: 8, padding: "8px 12px", fontSize: 14 }}>← Retour</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: C.white, fontWeight: 700, fontSize: 16 }}>🎗️ Nova</div>
+          <div style={{ color: C.skyBlueLight, fontSize: 11 }}>Chants de foi et d'espérance</div>
+        </div>
+      </div>
+
+      <div style={{ padding: "20px 18px 60px" }}>
+        {chants.map((chant, i) => (
+          <div key={chant.id} style={{ background: C.white, borderRadius: 14, padding: "18px 18px", marginBottom: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}22` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.skyBlue, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+              Chant {chant.numero}
+            </div>
+            <div style={{ fontWeight: 700, color: C.navy, fontSize: 16, marginBottom: 2 }}>{chant.titre}</div>
+            <div dir="rtl" style={{ fontSize: 14, color: C.navy, marginBottom: 12, fontFamily: "serif" }}>{chant.titreHebreu}</div>
+
+            <div dir="rtl" style={{ fontSize: 20, lineHeight: 1.8, color: C.navy, whiteSpace: "pre-wrap", fontFamily: "serif", marginBottom: 12 }}>
+              {chant.hebreu}
+            </div>
+
+            <div style={{ fontSize: 13, lineHeight: 1.6, color: C.gray, fontStyle: "italic", whiteSpace: "pre-wrap", marginBottom: 12 }}>
+              {chant.phonetique}
+            </div>
+
+            <div style={{ background: `${C.skyBlue}11`, borderRadius: 10, padding: "12px 14px", border: `1px solid ${C.skyBlue}33` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Explication</div>
+              <div style={{ fontSize: 13, lineHeight: 1.6, color: C.text }}>{chant.francais}</div>
+            </div>
+          </div>
+        ))}
+
+        <button
+          onClick={() => shareNova(chants)}
+          style={{ width: "100%", marginTop: 4, padding: 12, background: "#25D366", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, border: "none" }}
+        >
+          💬 Partager
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BoiteAOutilsTab({ t }) {
   const [format, setFormat] = useState(null); // null until chosen
   const [showFormatPicker, setShowFormatPicker] = useState(false);
   const [selectedPriere, setSelectedPriere] = useState(null);
+  const [showNova, setShowNova] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("priereFormat");
@@ -3429,6 +3628,23 @@ function BoiteAOutilsTab({ t }) {
         </button>
       ))}
 
+      {/* Nova — chants de foi et d'espérance, ajoutés en bas de la liste du Sidour */}
+      <button
+        onClick={() => setShowNova(true)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 14,
+          background: C.white, borderRadius: 12, padding: "14px 16px", marginBottom: 10,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)", border: `1px solid ${C.skyBlue}22`, textAlign: "left",
+        }}
+      >
+        <span style={{ fontSize: 26 }}>🎗️</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, color: C.navy, fontSize: 15 }}>Nova</div>
+          <div style={{ fontSize: 12, color: C.gray, marginTop: 1 }}>Chants de foi et d'espérance — 5 chants</div>
+        </div>
+        <span style={{ color: C.skyBlue, fontSize: 18 }}>›</span>
+      </button>
+
       {showFormatPicker && <FormatSelector onSelect={chooseFormat} />}
 
       {selectedPriere && format && (
@@ -3439,6 +3655,8 @@ function BoiteAOutilsTab({ t }) {
           onChangeFormat={() => setShowFormatPicker(true)}
         />
       )}
+
+      {showNova && <NovaDetail chants={NOVA_CHANTS} onBack={() => setShowNova(false)} />}
     </div>
   );
 }
