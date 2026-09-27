@@ -380,3 +380,76 @@ David, roi d'Israël, est vivant et existe (à dire trois fois).`,
 7. La grande bénédiction finale : Béni sois-Tu, qui as créé l'allégresse et la joie, le marié et la mariée, la gaieté, le chant, le plaisir et la liesse, l'amour, la fraternité, la paix et l'amitié. Bientôt, qu'on entende dans les villes de Juda et les rues de Jérusalem la voix de la joie et de l'allégresse, la voix du marié et de la mariée, la voix exultante des mariés sous leur dais et des jeunes gens en leurs festins. Béni sois-Tu, qui réjouis le marié avec la mariée.`,
   },
 ];
+
+// ─── NOVA — Chants de foi et d'espérance ──────────────────────────────────────
+// 5 courts chants (versets bibliques et liturgiques) avec traduction et explication,
+// affichés à la suite sur une seule page dédiée depuis le Sidour.
+export const NOVA_CHANTS = [
+  {
+    id: "nova-1",
+    numero: 1,
+    titre: "Tov Léhodot LaShem",
+    titreHebreu: "טוֹב לְהוֹדוֹת לַה'",
+    hebreu: `טוֹב לְהוֹדוֹת לַה'
+וּלְזַמֵּר לְשִׁמְךָ עֶלְיוֹן
+לְהַגִּיד בַּבֹּקֶר חַסְדֶּךָ
+וֶאֱמוּנָתְךָ בַּלֵּילוֹת`,
+    phonetique: `Tov léhodot Lashem
+Oulzamer léshimkha elyon
+Léhaguid baboker hasdékha
+Véémounatkha baleilot`,
+    francais: `Versets du Psaume 92, récités à l'ouverture de l'Arche sainte. Même au cœur de la douleur, nous ouvrons par la gratitude — pour le bien qui nous reste et la foi qui n'a pas bougé.`,
+  },
+  {
+    id: "nova-2",
+    numero: 2,
+    titre: "Ma Ashiv",
+    titreHebreu: "מָה אָשִׁיב",
+    hebreu: `מָה אָשִׁיב לַה' כָּל תַּגְמוּלוֹהִי עָלָי
+כּוֹס יְשׁוּעוֹת אֶשָּׂא וּבְשֵׁם ה' אֶקְרָא
+נְדָרַי לַה' אֲשַׁלֵּם נֶגְדָה נָּא לְכָל עַמּוֹ
+יָקָר בְּעֵינֵי ה' הַמָּוְתָה לַחֲסִידָיו`,
+    phonetique: `Ma ashiv Lashem kol tagmoulohi alaï
+Kos yeshouot essa ouveshem Adonaï ekra
+Nédaraï Lashem ashalem négda na lékhol amo
+Yakar béeiné Adonaï hamavta lahassidav`,
+    francais: `Du Psaume 116 — un chant de reconnaissance pour tout ce que nous avons reçu, même lorsqu'il est difficile de savoir comment le rendre. Il nous invite à lever la « coupe du salut ».`,
+  },
+  {
+    id: "nova-3",
+    numero: 3,
+    titre: "Vahavi'otim",
+    titreHebreu: "וַהֲבִיאוֹתִים",
+    hebreu: `וַהֲבִיאוֹתִים אֶל הַר קָדְשִׁי
+וְשִׂמַּחְתִּים בְּבֵית תְּפִלָּתִי
+עוֹלֹתֵיהֶם וְזִבְחֵיהֶם לְרָצוֹן עַל מִזְבְּחִי
+כִּי בֵיתִי בֵּית תְּפִלָּה יִקָּרֵא לְכָל הָעַמִּים`,
+    phonetique: `Vahavioutim el har kodshi
+Véssima'htim bévéit téfilati
+Olotéihem vézivhéihem lératson al mizbé'hi
+Ki véiti béit téfila yikaré lékhol haamim`,
+    francais: `D'Isaïe 56 — une promesse de rassemblement, de retour au pays pour ceux qui sont dispersés. Un chant d'espoir pour le retour des otages et de tous ceux qui ont été arrachés à leur foyer.`,
+  },
+  {
+    id: "nova-4",
+    numero: 4,
+    titre: "Revah VéHatzala",
+    titreHebreu: "רֶוַח וְהַצָּלָה",
+    hebreu: `רֶוַח וְהַצָּלָה יַעֲמוֹד לַיְּהוּדִים
+מִמָּקוֹם אַחֵר`,
+    phonetique: `Révah véhatsala yaamod layéhoudim
+Mimakom aher`,
+    francais: `Extrait des paroles de Mordekhaï à Esther (Esther 4:14) — la foi que la délivrance viendra, même quand on n'en voit pas encore le chemin.`,
+  },
+  {
+    id: "nova-5",
+    numero: 5,
+    titre: "Sha'aré Shamayim",
+    titreHebreu: "שַׁעֲרֵי שָׁמַיִם",
+    hebreu: `שַׁעֲרֵי שָׁמַיִם פְּתַח
+וְאוֹצָרְךָ הַטּוֹב לָנוּ תִפְתַּח`,
+    phonetique: `Shaaré shamayim péta'h
+Véotsarkha hatov lanou tifta'h`,
+    francais: `Une prière pour l'ouverture des portes du ciel et de la miséricorde, au moment où nous ouvrons les portes du Hekhal pour sortir les rouleaux de la Torah.`,
+  },
+];
